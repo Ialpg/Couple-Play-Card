@@ -1,891 +1,754 @@
-/**
-
-- COUPLE PLAY — script.js
-- Vanilla JavaScript, không dùng framework
-- Tất cả dữ liệu lưu vào localStorage
-  */
+/* ============================================================
+SECRET DRAW — script.js
+Dark Luxury Erotic Game Logic
+============================================================ */
 
 ‘use strict’;
 
-// ═══════════════════════════════════════════════════
-// STATE — Trạng thái ứng dụng
-// ═══════════════════════════════════════════════════
+/* ─────────────────────────────────────────────────────────────
+DEFAULT CARD DATA
+───────────────────────────────────────────────────────────── */
+const DEFAULT_CARDS = [
+// Level 1 – Nhẹ nhàng, dạo đầu
+{ title: “Cái Nhìn Thật Lâu”,       desc: “Nhìn vào mắt người kia thật sâu trong 30 giây, không được cười hay nói chuyện. Chỉ nhìn và cảm nhận nhịp tim của nhau.”, level: 1 },
+{ title: “Nụ Hôn Trán”,             desc: “Hôn lên trán người kia thật nhẹ nhàng, giữ môi ở đó 5 giây. Đặt tay lên má họ khi hôn – như đang nâng niu một điều quý giá.”, level: 1 },
+{ title: “Thì Thầm Điều Bí Mật”,    desc: “Nói thầm vào tai người kia một điều bạn chưa bao giờ dám nói ra. Không cần phải là gì to lớn – chỉ cần thật.”, level: 1 },
+{ title: “Massage Bàn Tay”,         desc: “Cầm tay người kia, massage nhẹ từng ngón tay và lòng bàn tay trong 1 phút. Chú ý từng đường chỉ tay, từng đốt ngón tay của họ.”, level: 1 },
+{ title: “Ôm Chặt 60 Giây”,         desc: “Ôm người kia thật chặt, đặt đầu vào vai hoặc ngực họ. Không nói gì – chỉ nghe tiếng tim và hơi thở ấm của nhau.”, level: 1 },
+{ title: “Vuốt Tóc Nhẹ Nhàng”,      desc: “Dùng tay nhẹ nhàng vuốt tóc người kia từ đỉnh đầu xuống, như đang ru họ ngủ. Làm chậm và tình cảm, mỗi sợi tóc đều được trân trọng.”, level: 1 },
+{ title: “Kể Kỷ Niệm Đẹp Nhất”,     desc: “Kể cho nhau nghe một kỷ niệm đẹp nhất bạn nhớ về người kia, thật chi tiết. Kể bằng giọng thật nhẹ và tình cảm.”, level: 1 },
+{ title: “Nụ Hôn Má”,               desc: “Hôn nhẹ lên từng bên má người kia, mỗi bên dừng lại 3 giây. Giữ tay họ trong khi hôn và cảm nhận hơi ấm từ da họ.”, level: 1 },
+{ title: “Trán Chạm Trán”,          desc: “Đứng thật gần, để trán chạm trán nhau. Nhắm mắt lại, hít thở cùng nhịp. Giữ nguyên trong 1 phút không nói một lời.”, level: 1 },
 
-const STATE = {
-cards: [],           // Toàn bộ 52 lá bài
-currentLevel: 1,     // Level đang chơi (1–4)
-session: {
-drawn: [],         // Danh sách ID đã rút trong phiên
-history: []        // Lịch sử đầy đủ [{card, level, time}]
-},
-currentCard: null,   // Lá bài đang hiển thị
-isFlipped: false,    // Trạng thái lật bài
+// Level 2 – Vừa phải, tình cảm hơn
+{ title: “Nụ Hôn Chậm”,             desc: “Hôn môi người kia thật chậm – bắt đầu nhẹ như chạm, rồi từ từ sâu hơn. Không vội vàng, tận hưởng từng khoảnh khắc trong ít nhất 45 giây.”, level: 2 },
+{ title: “Massage Cổ Vai”,          desc: “Để người kia ngồi trước mặt bạn và massage nhẹ nhàng cổ và vai họ trong 2 phút. Dùng ngón tay cái ấn nhẹ vào các điểm căng cứng.”, level: 2 },
+{ title: “Hơi Thở Trên Da”,         desc: “Thổi nhẹ hơi thở ấm lên cổ, tai hoặc gáy người kia thật chậm. Quan sát từng phản ứng của cơ thể họ.”, level: 2 },
+{ title: “Nhảy Chậm Không Nhạc”,    desc: “Đứng ôm nhau và nhảy chầm chậm dù không có nhạc. Nhắm mắt và chỉ cảm nhận cơ thể của nhau di chuyển nhẹ nhàng.”, level: 2 },
+{ title: “Hôn Lên Cổ”,              desc: “Hôn nhẹ nhàng lên cổ người kia – từ dưới tai xuống đến vai. Mỗi nụ hôn cách nhau một nhịp thở, thật chậm và tình tứ.”, level: 2 },
+{ title: “Chạm Tay Khắp Mặt”,       desc: “Nhắm mắt lại và để người kia dùng đầu ngón tay khẽ chạm lên từng phần khuôn mặt bạn – như đang vẽ lại ký ức về khuôn mặt người yêu.”, level: 2 },
+{ title: “Lời Thì Thầm Ngọt Ngào”,  desc: “Nói thầm vào tai người kia những gì bạn yêu thích nhất về cơ thể và tâm hồn họ, thật chi tiết và cụ thể. Đừng ngại ngùng.”, level: 2 },
+{ title: “Ánh Mắt Và Nụ Cười”,      desc: “Nhìn vào mắt người kia và mỉm cười thật tình cảm trong 1 phút. Không được nói gì – chỉ dùng ánh mắt và nụ cười để truyền đạt tất cả.”, level: 2 },
 
-// Timer
-timer: {
-seconds: 120,      // Thời gian mặc định
-remaining: 120,
-interval: null,
-running: false
-},
-
-// Music
-music: {
-playlist: [],      // [{name, url, type}] — type: ‘local’ | ‘url’
-currentIndex: -1,
-playing: false
-}
-};
-
-// Metadata các level
-const LEVEL_META = {
-1: { suit: ‘♥’, name: ‘Dạo đầu’,   desc: ‘Những hoạt động nhẹ nhàng, lãng mạn để bắt đầu buổi tối’,            color: ‘#e87c9a’ },
-2: { suit: ‘♦’, name: ‘Trung bình’, desc: ‘Tăng dần sự thú vị — lãng mạn và táo bạo hơn một chút’,              color: ‘#e86c2c’ },
-3: { suit: ‘♣’, name: ‘Cao’,        desc: ‘Đầy cảm xúc và kích thích — dành cho những phút thật sự gần nhau’,   color: ‘#6ca0e8’ },
-4: { suit: ‘♠’, name: ‘Rất cao’,   desc: ‘Mạnh mẽ, bạo dạn — chỉ khi cả hai hoàn toàn thoải mái’,             color: ‘#b0b0b0’ }
-};
-
-// ═══════════════════════════════════════════════════
-// KHỞI TẠO
-// ═══════════════════════════════════════════════════
-
-document.addEventListener(‘DOMContentLoaded’, () => {
-loadFromStorage();
-updateLandingUI();
-setupSafeWord();
-});
-
-/** Tải dữ liệu đã lưu từ localStorage */
-function loadFromStorage() {
-// Tải bài
-const savedCards = localStorage.getItem(‘coupleplay_cards’);
-if (savedCards) {
-STATE.cards = JSON.parse(savedCards);
-}
-
-// Tải phiên chơi
-const savedSession = localStorage.getItem(‘coupleplay_session’);
-if (savedSession) {
-STATE.session = JSON.parse(savedSession);
-}
-
-// Tải playlist nhạc (chỉ URL, không lưu blob)
-const savedPlaylist = localStorage.getItem(‘coupleplay_playlist’);
-if (savedPlaylist) {
-STATE.music.playlist = JSON.parse(savedPlaylist).filter(t => t.type === ‘url’);
-}
-}
-
-/** Cập nhật UI trang chủ dựa theo dữ liệu có sẵn */
-function updateLandingUI() {
-const hasData = STATE.cards.length > 0;
-const dataStatus = document.getElementById(‘dataStatus’);
-const statusText = document.getElementById(‘dataStatusText’);
-const btnStart = document.getElementById(‘btnStartPlay’);
-
-if (hasData) {
-dataStatus.classList.remove(‘hidden’);
-statusText.textContent = `${STATE.cards.length} lá bài đã sẵn sàng`;
-btnStart.style.display = ‘flex’;
-} else {
-dataStatus.classList.add(‘hidden’);
-btnStart.style.display = ‘none’;
-}
-}
-
-// ═══════════════════════════════════════════════════
-// ĐIỀU HƯỚNG TRANG
-// ═══════════════════════════════════════════════════
-
-/** Chuyển đến trang chính */
-function goToMain() {
-if (STATE.cards.length === 0) {
-showToast(‘⚠️ Chưa có dữ liệu bài. Hãy import file Excel hoặc dùng dữ liệu mẫu!’);
-return;
-}
-showPage(‘pageMain’);
-renderLevelUI(STATE.currentLevel);
-renderAllTabCounts();
-renderPlaylist();
-}
-
-/** Quay về trang chủ */
-function goToLanding() {
-showPage(‘pageLanding’);
-stopTimer();
-}
-
-/** Hiển thị trang theo id */
-function showPage(pageId) {
-document.querySelectorAll(’.page’).forEach(p => p.classList.remove(‘active’));
-document.getElementById(pageId).classList.add(‘active’);
-}
-
-/** Đóng màn hình bài, về trang main */
-function closeCard() {
-stopTimer();
-document.getElementById(‘pageCard’).classList.remove(‘active’);
-showPage(‘pageMain’);
-}
-
-// ═══════════════════════════════════════════════════
-// IMPORT EXCEL
-// ═══════════════════════════════════════════════════
-
-/** Kích hoạt input file */
-function triggerImport() {
-document.getElementById(‘excelInput’).click();
-}
-
-/** Xử lý khi người dùng chọn file Excel */
-function handleExcelImport(event) {
-const file = event.target.files[0];
-if (!file) return;
-
-const reader = new FileReader();
-reader.onload = (e) => {
-try {
-const data = new Uint8Array(e.target.result);
-const workbook = XLSX.read(data, { type: ‘array’ });
-
-```
-  // Lấy sheet đầu tiên
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-
-  const cards = rows
-    .filter(row => row.level && row.title)
-    .map((row, idx) => ({
-      id: `card_${idx}_${Date.now()}`,
-      level: parseInt(row.level) || 1,
-      suit: row.suit || LEVEL_META[parseInt(row.level) || 1]?.suit || '♥',
-      title: String(row.title).trim(),
-      description: String(row.description || '').trim(),
-      duration: parseInt(row.duration) || 120
-    }));
-
-  if (cards.length === 0) {
-    showToast('❌ Không tìm thấy dữ liệu hợp lệ trong file!');
-    return;
-  }
-
-  STATE.cards = cards;
-  saveCards();
-  updateLandingUI();
-  showToast(`✅ Đã import ${cards.length} lá bài thành công!`);
-} catch (err) {
-  console.error(err);
-  showToast('❌ Lỗi đọc file Excel. Kiểm tra định dạng file!');
-}
-```
-
-};
-reader.readAsArrayBuffer(file);
-
-// Reset input để có thể import lại cùng file
-event.target.value = ‘’;
-}
-
-/** Lưu bài vào localStorage */
-function saveCards() {
-localStorage.setItem(‘coupleplay_cards’, JSON.stringify(STATE.cards));
-}
-
-/** Lưu phiên chơi vào localStorage */
-function saveSession() {
-localStorage.setItem(‘coupleplay_session’, JSON.stringify(STATE.session));
-}
-
-// ═══════════════════════════════════════════════════
-// DỮ LIỆU MẪU
-// ═══════════════════════════════════════════════════
-
-/** Tải 52 lá bài mẫu */
-function loadSampleData() {
-const sampleCards = [
-// Level 1 — Dạo đầu (13 lá)
-{ id:‘s1’,  level:1, suit:‘♥’, title:‘Nắm tay nhau’,           description:‘Cùng nhau ngồi và nắm tay trong 1 phút. Nhìn vào mắt nhau và mỉm cười không nói gì.’, duration:60 },
-{ id:‘s2’,  level:1, suit:‘♥’, title:‘Lời khen chân thành’,     description:‘Mỗi người nói 3 điều bạn yêu thích ở đối phương hôm nay — cụ thể và từ trái tim.’, duration:90 },
-{ id:‘s3’,  level:1, suit:‘♥’, title:‘Hôn nhẹ trán’,           description:‘Người A nhắm mắt lại. Người B nhẹ nhàng hôn lên trán và thì thầm một điều tốt đẹp.’, duration:60 },
-{ id:‘s4’,  level:1, suit:‘♥’, title:‘Massage tay’,            description:‘Một người massage tay kia trong 2 phút — chú ý từng ngón tay và lòng bàn tay.’, duration:120 },
-{ id:‘s5’,  level:1, suit:‘♥’, title:‘Kể kỷ niệm đẹp’,        description:‘Chia sẻ kỷ niệm yêu thích nhất của hai người kể từ khi quen nhau.’, duration:180 },
-{ id:‘s6’,  level:1, suit:‘♥’, title:‘Điệu nhảy chậm’,        description:‘Bật một bản nhạc chậm và cùng nhau khiêu vũ trong phòng, không cần nhạc nếu muốn.’, duration:180 },
-{ id:‘s7’,  level:1, suit:‘♥’, title:‘Chạm mặt nhẹ nhàng’,    description:‘Nhẹ nhàng chạm tay vào má, cằm và trán của nhau trong im lặng hoàn toàn.’, duration:90 },
-{ id:‘s8’,  level:1, suit:‘♥’, title:‘Đọc thơ cho nhau’,      description:‘Mỗi người đọc một đoạn thơ hoặc bài hát yêu thích — có thể tự sáng tác.’, duration:120 },
-{ id:‘s9’,  level:1, suit:‘♥’, title:‘Ôm nhau yên tĩnh’,      description:‘Ôm nhau chặt và đếm nhịp tim của nhau trong 2 phút yên tĩnh hoàn toàn.’, duration:120 },
-{ id:‘s10’, level:1, suit:‘♥’, title:‘Ánh mắt kết nối’,       description:‘Nhìn thẳng vào mắt nhau liên tục trong 2 phút. Không cười, không nhìn đi chỗ khác.’, duration:120 },
-{ id:‘s11’, level:1, suit:‘♥’, title:‘Hôn nhẹ môi’,           description:‘Một nụ hôn nhẹ nhàng, chậm rãi — không vội vàng, tận hưởng từng giây.’, duration:60 },
-{ id:‘s12’, level:1, suit:‘♥’, title:‘Nói điều bí mật nhỏ’,   description:‘Mỗi người kể một điều bí mật nhỏ mà chưa từng nói với ai khác.’, duration:120 },
-{ id:‘s13’, level:1, suit:‘♥’, title:‘Massage vai cổ’,        description:‘Người A ngồi phía trước, người B nhẹ nhàng massage vai và cổ trong 3 phút.’, duration:180 },
-
-```
-// Level 2 — Trung bình (13 lá)
-{ id:'s14', level:2, suit:'♦', title:'Hôn sâu kéo dài',       description:'Một nụ hôn sâu, tay chạm nhẹ vào mặt nhau — kéo dài không dưới 1 phút.', duration:60 },
-{ id:'s15', level:2, suit:'♦', title:'Thì thầm vào tai',      description:'Thay nhau thì thầm điều bạn muốn đêm nay vào tai nhau — dùng giọng thật nhẹ.', duration:90 },
-{ id:'s16', level:2, suit:'♦', title:'Massage lưng',          description:'Massage toàn bộ lưng cho nhau — chú ý đến điểm căng thẳng nhất.', duration:240 },
-{ id:'s17', level:2, suit:'♦', title:'Cởi áo cho nhau',       description:'Chậm rãi và nhẹ nhàng cởi áo của nhau — mỗi động tác đều có chủ ý.', duration:120 },
-{ id:'s18', level:2, suit:'♦', title:'Hôn cổ nhau',          description:'Từ từ hôn từ cổ xuống vai và ngược lại — chú ý phản ứng của đối phương.', duration:120 },
-{ id:'s19', level:2, suit:'♦', title:'Trò chuyện về mong muốn',description:'Mỗi người nói thẳng một điều mình thật sự muốn đêm nay — không ngại ngùng.', duration:180 },
-{ id:'s20', level:2, suit:'♦', title:'Bịt mắt và đoán',      description:'Bịt mắt nhau và chạm vào các phần cơ thể để đoán — chỉ được dùng tay.', duration:180 },
-{ id:'s21', level:2, suit:'♦', title:'Hôn bàn tay và cổ tay', description:'Hôn nhẹ vào lòng bàn tay, ngón tay và cổ tay của nhau thật chậm.', duration:90 },
-{ id:'s22', level:2, suit:'♦', title:'Ôm từ phía sau',       description:'Ôm nhau từ phía sau, cằm tựa lên vai — hít thở cùng nhịp trong 2 phút.', duration:120 },
-{ id:'s23', level:2, suit:'♦', title:'Nói điều táo bạo',     description:'Nói thẳng một điều bạn vẫn ngại nói — không được dùng từ lịch sự thay thế.', duration:90 },
-{ id:'s24', level:2, suit:'♦', title:'Khám phá bằng đầu ngón tay',description:'Chỉ dùng đầu ngón tay để nhẹ nhàng khám phá cơ thể nhau trong 3 phút.', duration:180 },
-{ id:'s25', level:2, suit:'♦', title:'Hôn ở nơi bất ngờ',    description:'Mỗi người chọn một vị trí bất ngờ trên cơ thể để hôn — vị trí khác mọi khi.', duration:90 },
-{ id:'s26', level:2, suit:'♦', title:'Thư tình nhỏ',         description:'Trong 3 phút, mỗi người viết 5 từ mô tả cảm xúc lúc này rồi đọc cho nhau nghe.', duration:180 },
-
-// Level 3 — Cao (13 lá)
-{ id:'s27', level:3, suit:'♣', title:'Làm chủ hoàn toàn',     description:'Một người hoàn toàn theo hướng dẫn của người kia trong 5 phút — không được từ chối.', duration:300 },
-{ id:'s28', level:3, suit:'♣', title:'Massage sâu',           description:'Massage toàn thân cho nhau — bắt đầu từ vai, lưng, mông và chân trong 5 phút.', duration:300 },
-{ id:'s29', level:3, suit:'♣', title:'Trò chuyện không rào cản',description:'Nói thẳng điều gì trong quan hệ thể xác bạn muốn thay đổi hoặc thử mới.', duration:240 },
-{ id:'s30', level:3, suit:'♣', title:'Nhiếp ảnh riêng tư',    description:'Chụp cho nhau những bức ảnh nghệ thuật — chỉ lưu trên máy, không chia sẻ.', duration:300 },
-{ id:'s31', level:3, suit:'♣', title:'Kịch bản vai diễn',     description:'Cùng đóng vai một cặp đôi xa lạ mới gặp — diễn xuất trong 5 phút.', duration:300 },
-{ id:'s32', level:3, suit:'♣', title:'Hôn từ đầu đến chân',   description:'Hôn theo đường thẳng từ trán xuống đến bàn chân của nhau — đừng bỏ sót.', duration:300 },
-{ id:'s33', level:3, suit:'♣', title:'Đặt tên các vùng nhạy', description:'Cùng nhau xác định và đặt tên riêng cho 3 vị trí nhạy cảm yêu thích của mỗi người.', duration:180 },
-{ id:'s34', level:3, suit:'♣', title:'Bịt mắt & thỏa mãn',   description:'Bịt mắt và để người kia làm bất kỳ điều gì họ muốn trong 4 phút.', duration:240 },
-{ id:'s35', level:3, suit:'♣', title:'Nói trong khi...',       description:'Hai người thay nhau nói 3 câu mô tả cảm xúc ngay lúc đó, thật chi tiết.', duration:180 },
-{ id:'s36', level:3, suit:'♣', title:'Khám phá bóng tối',     description:'Tắt đèn hoàn toàn và khám phá nhau chỉ bằng xúc giác trong 5 phút.', duration:300 },
-{ id:'s37', level:3, suit:'♣', title:'Thách thức 10 hôn',     description:'Hôn nhau 10 lần ở 10 vị trí khác nhau — không được lặp lại vị trí nào.', duration:180 },
-{ id:'s38', level:3, suit:'♣', title:'Hơi thở và tiếp xúc',   description:'Ngồi cực gần nhau, hơi thở chạm nhau — không chạm người, chỉ hơi thở trong 2 phút.', duration:120 },
-{ id:'s39', level:3, suit:'♣', title:'Lời thì thầm táo bạo',  description:'Thay nhau thì thầm vào tai những điều thật sự khiêu gợi — thật và cụ thể.', duration:180 },
-
-// Level 4 — Rất cao (13 lá)
-{ id:'s40', level:4, suit:'♠', title:'Không giới hạn — 5 phút',description:'Không có quy tắc, không có giới hạn — chỉ có safe word. Thoải mái hoàn toàn trong 5 phút.', duration:300 },
-{ id:'s41', level:4, suit:'♠', title:'Thống trị & Phục tùng',  description:'Một người hoàn toàn kiểm soát. Người kia phải xin phép trước mọi hành động trong 5 phút.', duration:300 },
-{ id:'s42', level:4, suit:'♠', title:'Kịch bản bạo dạn',      description:'Cùng nhau diễn một kịch bản mà cả hai đã bàn trước — không ngại ngùng.', duration:300 },
-{ id:'s43', level:4, suit:'♠', title:'Thách thức bền',        description:'Thi xem ai có thể "cưỡng lại" lâu hơn khi người kia đang cố ý khiêu khích.', duration:300 },
-{ id:'s44', level:4, suit:'♠', title:'Thử điều chưa từng làm', description:'Cùng nhau thử một điều hoàn toàn mới mà cả hai chưa bao giờ thử trước đây.', duration:240 },
-{ id:'s45', level:4, suit:'♠', title:'Quà tặng cơ thể',       description:'Một người hoàn toàn "tặng" cơ thể mình cho người kia sử dụng tùy ý trong 5 phút.', duration:300 },
-{ id:'s46', level:4, suit:'♠', title:'Gương và ánh sáng nến',  description:'Đặt gương trước mặt và nhìn vào mắt nhau trong gương trong suốt 3 phút.', duration:180 },
-{ id:'s47', level:4, suit:'♠', title:'Cởi bỏ tất cả',        description:'Cùng nhau hoàn toàn không mặc gì và chỉ ôm nhau trong im lặng trong 3 phút.', duration:180 },
-{ id:'s48', level:4, suit:'♠', title:'Phần thưởng mạo hiểm',  description:'Người thắng trò bốc thăm được yêu cầu một điều bất kỳ — người kia không được từ chối.', duration:300 },
-{ id:'s49', level:4, suit:'♠', title:'Màn trình diễn riêng',  description:'Mỗi người thực hiện một màn trình diễn gợi cảm trong 2 phút cho người kia xem.', duration:120 },
-{ id:'s50', level:4, suit:'♠', title:'Nước và xúc giác',      description:'Dùng nước ấm hoặc đá để tạo cảm giác trên cơ thể nhau — chú ý phản ứng.', duration:240 },
-{ id:'s51', level:4, suit:'♠', title:'Lệnh và tuân lệnh',     description:'Người ra lệnh nói thật chậm, thật rõ ràng — người nhận lệnh thực hiện từng điều một.', duration:300 },
-{ id:'s52', level:4, suit:'♠', title:'Kết thúc hoàn hảo',     description:'Cùng nhau tạo ra khoảnh khắc đáng nhớ nhất của đêm nay — tự do hoàn toàn.', duration:300 }
-```
-
+// Level 3 – Nóng hơn, táo bạo hơn
+{ title: “Cởi Nút Áo Nhau”,         desc: “Chậm rãi, tình tứ cởi từng chiếc nút áo của người kia bằng chỉ hai ngón tay. Nhìn vào mắt họ trong khi làm, không vội vàng.”, level: 3 },
+{ title: “Hôn Sâu Không Giới Hạn”,  desc: “Dành trọn thời gian hẹn hò chỉ để hôn nhau – khám phá mọi cách hôn khác nhau mà hai người chưa thử. Hãy bất ngờ với nhau.”, level: 3 },
+{ title: “Massage Toàn Lưng”,        desc: “Để người kia nằm sấp, bắt đầu massage từ gáy xuống toàn bộ phần lưng. Dùng cả hai tay, thay đổi áp lực và tốc độ tùy theo phản ứng.”, level: 3 },
+{ title: “Khiêu Vũ Gợi Cảm”,        desc: “Bật một bản nhạc chậm, sexy và khiêu vũ cho người kia xem trong 1 phút. Tự nhiên, tự tin – không cần hoàn hảo, chỉ cần thật sự.”, level: 3 },
+{ title: “Thì Thầm Điều Muốn”,       desc: “Nói thật nhỏ vào tai người kia một điều bạn muốn họ làm cho mình tối nay. Chi tiết nhất có thể – đừng giữ lại bất cứ điều gì.”, level: 3 },
+{ title: “Hôn Từ Vai Xuống”,         desc: “Bắt đầu từ điểm nối vai và cổ, hôn nhẹ xuống theo đường vai người kia. Mỗi nụ hôn dừng lại một nhịp tim, mỗi điểm chạm đều có chủ ý.”, level: 3 },
 ];
 
-STATE.cards = sampleCards;
-saveCards();
-updateLandingUI();
-showToast(‘✅ Đã tải 52 lá bài mẫu!’);
+/* ─────────────────────────────────────────────────────────────
+APPLICATION STATE
+───────────────────────────────────────────────────────────── */
+const state = {
+cards: [],
+usedIndices: [],
+currentCard: null,
+roundCount: 0,
+heatLevel: 1,
+heatForced: 0,
+timerSeconds: 120,
+timerPreset: 120,
+timerRunning: false,
+timerInterval: null,
+history: [],
+safeWord: ‘Dừng Lại’,
+musicPlaying: false,
+currentScreen: ‘screen-home’,
+};
+
+/* ─────────────────────────────────────────────────────────────
+INIT
+───────────────────────────────────────────────────────────── */
+function init() {
+// Load saved data
+const savedCards   = localStorage.getItem(‘sd_cards’);
+const savedHistory = localStorage.getItem(‘sd_history’);
+const savedSW      = localStorage.getItem(‘sd_safeword’);
+
+state.cards   = savedCards   ? JSON.parse(savedCards)   : […DEFAULT_CARDS];
+state.history = savedHistory ? JSON.parse(savedHistory) : [];
+
+if (savedSW) {
+state.safeWord = savedSW;
+document.getElementById(‘safe-word-input’).value = savedSW;
 }
 
-// ═══════════════════════════════════════════════════
-// LEVEL UI
-// ═══════════════════════════════════════════════════
+updateDeckLabel();
+initBackground();
+setupDeckInteraction();
 
-/** Chuyển level */
-function switchLevel(level) {
-STATE.currentLevel = level;
-
-// Cập nhật tab active
-document.querySelectorAll(’.level-tab’).forEach(tab => {
-tab.classList.toggle(‘active’, parseInt(tab.dataset.level) === level);
-});
-
-renderLevelUI(level);
-}
-
-/** Render toàn bộ UI của một level */
-function renderLevelUI(level) {
-const meta = LEVEL_META[level];
-const levelCards = getCardsByLevel(level);
-const drawnInLevel = STATE.session.drawn.filter(id =>
-levelCards.some(c => c.id === id)
-);
-const remaining = levelCards.length - drawnInLevel.length;
-
-// Cập nhật thông tin level
-document.getElementById(‘levelIcon’).textContent = meta.suit;
-document.getElementById(‘levelTitle’).textContent = `Level ${level} — ${meta.name}`;
-document.getElementById(‘levelDesc’).textContent = meta.desc;
-document.getElementById(‘totalCards’).textContent = levelCards.length;
-document.getElementById(‘drawnCards’).textContent = drawnInLevel.length;
-document.getElementById(‘remainCards’).textContent = remaining;
-
-// Màu suit theo level
-document.getElementById(‘levelIcon’).style.color = meta.color;
-
-// Render danh sách bài
-renderCardsGrid(levelCards);
-}
-
-/** Render grid bài xem trước */
-function renderCardsGrid(cards) {
-const grid = document.getElementById(‘cardsGrid’);
-grid.innerHTML = ‘’;
-
-if (cards.length === 0) {
-grid.innerHTML = ‘<p style="color:var(--text-muted);font-size:0.85rem;grid-column:1/-1;text-align:center;padding:1rem;">Chưa có lá bài nào ở mức này</p>’;
-return;
-}
-
-cards.forEach(card => {
-const isDrawn = STATE.session.drawn.includes(card.id);
-const item = document.createElement(‘div’);
-item.className = `card-preview-item ${isDrawn ? 'drawn' : ''}`;
-item.onclick = () => openCardDirect(card);
-item.innerHTML = `<div class="preview-suit">${card.suit}</div> <div class="preview-title-text">${card.title}</div> <div class="preview-duration">⏱ ${formatDuration(card.duration)}</div> ${isDrawn ? '<span class="preview-drawn-badge">Đã rút</span>' : ''}`;
-grid.appendChild(item);
+// Safe word input listener
+document.getElementById(‘safe-word-input’).addEventListener(‘input’, function () {
+state.safeWord = this.value || ‘Dừng Lại’;
+localStorage.setItem(‘sd_safeword’, state.safeWord);
+const badge = document.getElementById(‘safe-badge-text’);
+if (badge) badge.textContent = ’🛑 ’ + state.safeWord;
 });
 }
 
-/** Cập nhật số lượng bài ở từng tab */
-function renderAllTabCounts() {
-for (let l = 1; l <= 4; l++) {
-const cards = getCardsByLevel(l);
-const drawn = STATE.session.drawn.filter(id => cards.some(c => c.id === id));
-const remaining = cards.length - drawn.length;
-const el = document.getElementById(`count${l}`);
-if (el) el.textContent = remaining;
+/* ─────────────────────────────────────────────────────────────
+CANVAS BACKGROUND — stars + neon glow
+───────────────────────────────────────────────────────────── */
+function initBackground() {
+const canvas = document.getElementById(‘bg-canvas’);
+const ctx = canvas.getContext(‘2d’);
+let W, H;
+
+const stars = Array.from({ length: 90 }, () => ({
+x: Math.random(),
+y: Math.random(),
+r: Math.random() * 1.1 + 0.2,
+phase: Math.random() * Math.PI * 2,
+speed: Math.random() * 0.006 + 0.003,
+}));
+
+// Nebula particles
+const nebulas = Array.from({ length: 4 }, (_, i) => ({
+x: [0.15, 0.8, 0.5, 0.3][i],
+y: [0.2, 0.7, 0.45, 0.85][i],
+r: 120 + Math.random() * 80,
+hue: [320, 0, 300, 340][i],
+phase: Math.random() * Math.PI * 2,
+}));
+
+function resize() {
+W = canvas.width  = window.innerWidth;
+H = canvas.height = window.innerHeight;
 }
+resize();
+window.addEventListener(‘resize’, resize);
+
+function draw() {
+ctx.clearRect(0, 0, W, H);
+const t = Date.now() * 0.001;
+
+```
+// Deep background
+const bg = ctx.createRadialGradient(W * 0.5, H * 0.65, 0, W * 0.5, H * 0.5, W * 0.85);
+bg.addColorStop(0, 'rgba(26,0,12,0.92)');
+bg.addColorStop(0.45, 'rgba(14,6,14,0.95)');
+bg.addColorStop(1, 'rgba(8,6,8,1)');
+ctx.fillStyle = bg;
+ctx.fillRect(0, 0, W, H);
+
+// Nebula blobs
+nebulas.forEach(n => {
+  const x = n.x * W + Math.sin(t * 0.3 + n.phase) * 15;
+  const y = n.y * H + Math.cos(t * 0.25 + n.phase) * 12;
+  const grd = ctx.createRadialGradient(x, y, 0, x, y, n.r);
+  grd.addColorStop(0, `hsla(${n.hue},80%,40%,0.055)`);
+  grd.addColorStop(1, 'transparent');
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, W, H);
+});
+
+// Stars
+stars.forEach(s => {
+  const alpha = 0.15 + 0.55 * Math.abs(Math.sin(t * s.speed * 9 + s.phase));
+  ctx.beginPath();
+  ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+  const isGold = Math.random() < 0.006; // rare gold star twinkle
+  ctx.fillStyle = `rgba(${isGold ? '201,164,90' : '245,200,215'},${alpha * 0.55})`;
+  ctx.fill();
+});
+
+requestAnimationFrame(draw);
+```
+
+}
+draw();
 }
 
-// ═══════════════════════════════════════════════════
-// RÚT BÀI
-// ═══════════════════════════════════════════════════
-
-/** Rút bài ngẫu nhiên từ level hiện tại */
-function drawCard() {
-const level = STATE.currentLevel;
-const levelCards = getCardsByLevel(level);
-const available = levelCards.filter(c => !STATE.session.drawn.includes(c.id));
-
-if (available.length === 0) {
-// Hết bài ở level này
-if (level < 4) {
-if (confirm(`Bạn đã rút hết ${levelCards.length} lá bài ở Level ${level}!\nTự động chuyển sang Level ${level + 1}?`)) {
-levelUp();
-return;
+/* ─────────────────────────────────────────────────────────────
+SCREEN NAVIGATION
+───────────────────────────────────────────────────────────── */
+function showScreen(id) {
+document.querySelectorAll(’.screen’).forEach(s => s.classList.add(‘hidden’));
+const el = document.getElementById(id);
+if (el) el.classList.remove(‘hidden’);
+state.currentScreen = id;
 }
+
+function goHome() {
+stopTimer();
+showScreen(‘screen-home’);
+document.getElementById(‘btn-heat’).classList.remove(‘visible’);
+}
+
+function goToDeck() {
+stopTimer();
+showScreen(‘screen-deck’);
+document.getElementById(‘btn-heat’).classList.remove(‘visible’);
+updateDeckLabel();
+}
+
+/* ─────────────────────────────────────────────────────────────
+GAME START
+───────────────────────────────────────────────────────────── */
+function startGame() {
+state.safeWord    = document.getElementById(‘safe-word-input’).value || ‘Dừng Lại’;
+state.usedIndices = [];
+state.roundCount  = 0;
+state.heatForced  = 0;
+state.history     = [];
+
+const badge = document.getElementById(‘safe-badge-text’);
+if (badge) badge.textContent = ’🛑 ’ + state.safeWord;
+
+updateDeckLabel();
+showScreen(‘screen-deck’);
+
+// Staggered card stack animation
+document.querySelectorAll(’.stack-card’).forEach((c, i) => {
+c.style.opacity = ‘0’;
+c.style.transform = `translateY(40px) rotate(${[-4, 2.5, 0][i]}deg)`;
+setTimeout(() => {
+c.style.transition = ‘all 0.55s cubic-bezier(.4,0,.2,1)’;
+c.style.opacity = ‘1’;
+c.style.transform = `translateY(${[10, 5, 0][i]}px) rotate(${[-4, 2.5, 0][i]}deg) translateZ(${[-8, -4, 0][i]}px)`;
+}, i * 130 + 80);
+});
+}
+
+function updateDeckLabel() {
+const total = state.cards.length;
+const used  = state.usedIndices.length;
+const el = document.getElementById(‘deck-count-label’);
+if (el) el.textContent = `${total - used} lá còn lại · ${total} tổng`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+DECK INTERACTION — swipe / tap
+───────────────────────────────────────────────────────────── */
+function setupDeckInteraction() {
+const wrap    = document.getElementById(‘deck-wrap’);
+const topCard = document.getElementById(‘top-card’);
+if (!wrap || !topCard) return;
+
+let startY = 0, curY = 0, dragging = false;
+
+wrap.addEventListener(‘touchstart’, e => {
+startY   = e.touches[0].clientY;
+dragging = true;
+topCard.style.transition = ‘none’;
+}, { passive: true });
+
+wrap.addEventListener(‘touchmove’, e => {
+if (!dragging) return;
+curY = e.touches[0].clientY;
+const dy = startY - curY;
+if (dy > 0) {
+const pct = Math.min(dy / 130, 1);
+topCard.style.transform = `translateY(${-dy * 0.75}px) rotate(${pct * 6}deg) scale(${1 + pct * 0.04})`;
+topCard.style.opacity   = String(1 - pct * 0.35);
+}
+}, { passive: true });
+
+wrap.addEventListener(‘touchend’, () => {
+if (!dragging) return;
+dragging = false;
+const dy = startY - curY;
+if (dy > 75) {
+animateCardDraw(topCard);
 } else {
-showToast(‘🎉 Bạn đã hoàn thành tất cả 52 lá bài! Phiên chơi thật tuyệt vời!’);
+topCard.style.transition = ‘all 0.4s cubic-bezier(.4,0,.2,1)’;
+topCard.style.transform  = ‘’;
+topCard.style.opacity    = ‘1’;
 }
-return;
-}
+});
 
-// Random lá bài
-const randomIndex = Math.floor(Math.random() * available.length);
-const card = available[randomIndex];
-
-showCardScreen(card);
+// Click fallback
+wrap.addEventListener(‘click’, () => animateCardDraw(topCard));
 }
 
-/** Mở trực tiếp một lá bài từ danh sách */
-function openCardDirect(card) {
-showCardScreen(card);
+/* ─────────────────────────────────────────────────────────────
+CARD DRAW ANIMATION
+───────────────────────────────────────────────────────────── */
+function animateCardDraw(cardEl) {
+const rect = cardEl.getBoundingClientRect();
+const W    = window.innerWidth;
+const H    = window.innerHeight;
+
+// Clone flying card
+const fly = document.createElement(‘div’);
+fly.className = ‘card-flying’;
+fly.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`;
+fly.innerHTML = cardEl.innerHTML;
+document.body.appendChild(fly);
+cardEl.style.opacity = ‘0’;
+
+spawnSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+requestAnimationFrame(() => {
+fly.style.transition = ‘all 0.52s cubic-bezier(.4,0,.2,1)’;
+fly.style.left       = `${W / 2 - rect.width / 2}px`;
+fly.style.top        = `${H / 2 - rect.height / 2}px`;
+fly.style.transform  = ‘scale(1.06) rotate(4deg)’;
+fly.style.boxShadow  = ‘0 40px 100px rgba(0,0,0,0.95), 0 0 70px rgba(159,42,107,0.4)’;
+
+```
+setTimeout(() => {
+  fly.style.opacity   = '0';
+  fly.style.transform = 'scale(0.94) rotate(-4deg) translateY(-24px)';
+  setTimeout(() => {
+    fly.remove();
+    cardEl.style.opacity   = '1';
+    cardEl.style.transition = '';
+    cardEl.style.transform  = '';
+    drawCard();
+  }, 280);
+}, 420);
+```
+
+});
 }
 
-/** Hiển thị màn hình bài */
-function showCardScreen(card) {
-STATE.currentCard = card;
-STATE.isFlipped = false;
+/* ─────────────────────────────────────────────────────────────
+SPARKLE BURST
+───────────────────────────────────────────────────────────── */
+function spawnSparkles(cx, cy) {
+const colors = [’#e8cb88’, ‘#ff2d78’, ‘#c9a45a’, ‘#d4387e’, ‘#9f2a6b’];
+for (let i = 0; i < 10; i++) {
+const s = document.createElement(‘div’);
+s.className = ‘sparkle’;
+const angle = (i / 10) * Math.PI * 2 + Math.random() * 0.3;
+const dist  = 30 + Math.random() * 50;
+const color = colors[Math.floor(Math.random() * colors.length)];
+s.style.cssText = `left:${cx}px;top:${cy}px;opacity:1;transform:scale(1);background:${color};width:${3+Math.random()*4}px;height:${3+Math.random()*4}px;`;
+document.body.appendChild(s);
 
-// Cập nhật nội dung
-const meta = LEVEL_META[card.level];
-document.getElementById(‘cardLevelBadge’).textContent = `${meta.suit} Level ${card.level}`;
-document.getElementById(‘cardSuitLarge’).textContent = card.suit;
-document.getElementById(‘cardTitleLarge’).textContent = card.title;
-document.getElementById(‘cardDescription’).textContent = card.description;
+```
+requestAnimationFrame(() => {
+  s.style.transition = 'all 0.65s ease-out';
+  s.style.left       = `${cx + Math.cos(angle) * dist}px`;
+  s.style.top        = `${cy + Math.sin(angle) * dist}px`;
+  s.style.opacity    = '0';
+  s.style.transform  = 'scale(0)';
+  setTimeout(() => s.remove(), 700);
+});
+```
+
+}
+}
+
+/* ─────────────────────────────────────────────────────────────
+SMART CARD PICKER
+───────────────────────────────────────────────────────────── */
+function pickNextCard() {
+const { cards, usedIndices, roundCount, heatForced } = state;
+
+// Reset if exhausted
+if (usedIndices.length >= cards.length) state.usedIndices.length = 0;
+
+// Determine max level
+let maxLevel;
+if (heatForced >= 3)       maxLevel = 3;
+else if (heatForced >= 1)  maxLevel = Math.min(3, heatForced + 1);
+else if (roundCount < 3)   maxLevel = 1;
+else if (roundCount < 6)   maxLevel = Math.random() < 0.65 ? 1 : 2;
+else if (roundCount < 10)  maxLevel = [1, 2, 2, 3][Math.floor(Math.random() * 4)];
+else                        maxLevel = 3;
+
+const available = cards
+.map((c, i) => ({ …c, i }))
+.filter(c => !state.usedIndices.includes(c.i) && c.level <= maxLevel);
+
+const pool = available.length > 0
+? available
+: cards.map((c, i) => ({ …c, i })).filter(c => !state.usedIndices.includes(c.i));
+
+const sameLevel = pool.filter(c => c.level === maxLevel);
+const chosen = (sameLevel.length > 0 && Math.random() < 0.65)
+? sameLevel[Math.floor(Math.random() * sameLevel.length)]
+: pool[Math.floor(Math.random() * pool.length)];
+
+state.usedIndices.push(chosen.i);
+return chosen;
+}
+
+/* ─────────────────────────────────────────────────────────────
+DRAW CARD → PLAY SCREEN
+───────────────────────────────────────────────────────────── */
+function drawCard() {
+const card = pickNextCard();
+state.currentCard = card;
+state.roundCount++;
+
+// Populate card content
+document.getElementById(‘card-title’).textContent = card.title;
+document.getElementById(‘card-desc’).textContent  = card.desc;
+document.getElementById(‘round-counter’).textContent = `Lá ${state.roundCount}`;
+
+// Suit
+const suits = [‘♥’, ‘♦’, ‘♠’, ‘♣’];
+document.getElementById(‘card-suit’).textContent = suits[Math.floor(Math.random() * 4)];
+
+// Level badge
+const badge = document.getElementById(‘card-level-badge’);
+if (card.level === 1)      { badge.textContent = ‘✦ Nhẹ Nhàng’;  badge.className = ‘level-badge level-1’; }
+else if (card.level === 2) { badge.textContent = ‘♥ Tình Cảm’;   badge.className = ‘level-badge level-2’; }
+else                        { badge.textContent = ‘🔥 Nóng Bỏng’; badge.className = ‘level-badge level-3’; }
+
+// Corner suit labels
+[‘corner-tl’, ‘corner-br’].forEach(id => {
+const el = document.getElementById(id);
+if (el) el.innerHTML = `${suits[Math.floor(Math.random() * 4)]}<br>${card.level}`;
+});
+
+// Heat bar
+const heatPct = Math.min(100, (state.roundCount / 12) * 100 + state.heatForced * 20);
+document.getElementById(‘heat-fill’).style.width = heatPct + ‘%’;
+
+// Heat dots
+for (let i = 0; i < 5; i++) {
+document.getElementById(`dot-${i}`).classList.toggle(‘on’, i <= state.heatForced);
+}
 
 // Reset flip
-document.getElementById(‘cardFlipInner’).classList.remove(‘flipped’);
+const flip = document.getElementById(‘card-flip’);
+flip.classList.remove(‘flipped’);
+flip.style.transition = ‘none’;
+requestAnimationFrame(() => { flip.style.transition = ‘’; });
 
-// Reset timer theo duration của bài
-stopTimer();
-setTimer(card.duration);
-
-// Load hình ảnh nếu có
-loadCardImage(card.id);
-
-// Hiện màn hình
-document.getElementById(‘pageCard’).classList.add(‘active’);
-document.getElementById(‘pageMain’).classList.remove(‘active’);
+// Reset photo area
+const area = document.getElementById(‘photo-upload-area’);
+const img  = area.querySelector(‘img’);
+if (img) {
+img.remove();
+area.querySelectorAll(‘span’).forEach(s => s.style.display = ‘’);
 }
 
-/** Lật bài */
-function flipCard() {
-STATE.isFlipped = !STATE.isFlipped;
-document.getElementById(‘cardFlipInner’).classList.toggle(‘flipped’, STATE.isFlipped);
-}
+// Save history
+state.history.push({ title: card.title, desc: card.desc, level: card.level, round: state.roundCount });
+localStorage.setItem(‘sd_history’, JSON.stringify(state.history));
 
-/** Hoàn thành lá bài — đánh dấu đã rút */
-function completeCard() {
-const card = STATE.currentCard;
-if (!card) return;
+// Hide next btn, reset timer
+document.getElementById(‘btn-next’).classList.remove(‘visible’);
+resetTimer();
 
-// Thêm vào danh sách đã rút (tránh duplicate)
-if (!STATE.session.drawn.includes(card.id)) {
-STATE.session.drawn.push(card.id);
-}
+// Show play screen
+showScreen(‘screen-play’);
+document.getElementById(‘btn-heat’).classList.add(‘visible’);
+updateDeckLabel();
 
-// Thêm vào lịch sử
-STATE.session.history.push({
-card: { id: card.id, title: card.title, suit: card.suit, level: card.level },
-level: card.level,
-time: new Date().toLocaleTimeString(‘vi-VN’, { hour: ‘2-digit’, minute: ‘2-digit’ })
+// Entrance animation
+const scene = document.getElementById(‘card-flip’);
+scene.style.opacity   = ‘0’;
+scene.style.transform = ‘translateY(-28px) rotateY(-12deg)’;
+requestAnimationFrame(() => {
+scene.style.transition = ‘all 0.6s cubic-bezier(.4,0,.2,1)’;
+scene.style.opacity    = ‘1’;
+scene.style.transform  = ‘’;
 });
-
-saveSession();
-stopTimer();
-renderAllTabCounts();
-renderLevelUI(STATE.currentLevel);
-
-showToast(`✅ Hoàn thành: ${card.title}`);
 }
 
-// ═══════════════════════════════════════════════════
-// TĂNG MỨC ĐỘ
-// ═══════════════════════════════════════════════════
+/* ─────────────────────────────────────────────────────────────
+DRAW NEXT CARD
+───────────────────────────────────────────────────────────── */
+function drawNextCard() {
+const scene = document.getElementById(‘card-flip’);
+scene.style.transition = ‘all 0.38s cubic-bezier(.4,0,.2,1)’;
+scene.style.opacity    = ‘0’;
+scene.style.transform  = ‘translateX(-70px) rotate(-6deg)’;
 
-/** Tăng level */
-function levelUp() {
-if (STATE.currentLevel >= 4) {
-showToast(‘Bạn đang ở mức độ cao nhất rồi! 🔥’);
-return;
+setTimeout(() => {
+showScreen(‘screen-deck’);
+document.getElementById(‘btn-heat’).classList.remove(‘visible’);
+updateDeckLabel();
+scene.style.transition = ‘none’;
+scene.style.opacity    = ‘1’;
+scene.style.transform  = ‘’;
+}, 380);
 }
 
-STATE.currentLevel++;
-switchLevel(STATE.currentLevel);
-showToast(`🔥 Tăng lên Level ${STATE.currentLevel} — ${LEVEL_META[STATE.currentLevel].name}!`);
+/* ─────────────────────────────────────────────────────────────
+CARD FLIP
+───────────────────────────────────────────────────────────── */
+function flipCard() {
+document.getElementById(‘card-flip’).classList.toggle(‘flipped’);
 }
 
-// ═══════════════════════════════════════════════════
-// TIMER
-// ═══════════════════════════════════════════════════
-
-/** Đặt thời gian timer (giây) */
+/* ─────────────────────────────────────────────────────────────
+TIMER
+───────────────────────────────────────────────────────────── */
 function setTimer(seconds) {
 stopTimer();
-STATE.timer.seconds = seconds;
-STATE.timer.remaining = seconds;
+state.timerPreset  = seconds;
+state.timerSeconds = seconds;
 updateTimerDisplay();
+document.querySelectorAll(’.preset-btn’).forEach(btn => {
+btn.classList.toggle(‘active’, btn.dataset.seconds === String(seconds));
+});
+document.getElementById(‘btn-next’).classList.remove(‘visible’);
+document.getElementById(‘timer-play-btn’).textContent = ‘▶’;
 }
 
-/** Bật/tắt timer */
 function toggleTimer() {
-if (STATE.timer.running) {
-stopTimer();
-} else {
-startTimer();
-}
+state.timerRunning ? pauseTimer() : startTimer();
 }
 
-/** Bắt đầu đếm */
 function startTimer() {
-if (STATE.timer.remaining <= 0) {
-STATE.timer.remaining = STATE.timer.seconds;
-}
+if (state.timerSeconds <= 0) resetTimer();
+state.timerRunning = true;
+document.getElementById(‘timer-play-btn’).textContent = ‘⏸’;
+document.getElementById(‘timer-display’).className = ‘timer-display running’;
 
-STATE.timer.running = true;
-document.getElementById(‘timerStartBtn’).textContent = ‘⏸ Dừng’;
-document.getElementById(‘timerDisplay’).classList.add(‘running’);
-
-STATE.timer.interval = setInterval(() => {
-STATE.timer.remaining–;
+state.timerInterval = setInterval(() => {
+state.timerSeconds–;
 updateTimerDisplay();
-
-```
-// Cảnh báo khi còn 10 giây
-if (STATE.timer.remaining === 10) {
-  document.getElementById('timerDisplay').classList.add('warning');
+if (state.timerSeconds <= 10 && state.timerSeconds > 0) {
+document.getElementById(‘timer-display’).className = ‘timer-display warning’;
 }
-
-if (STATE.timer.remaining <= 0) {
-  stopTimer();
-  timerFinished();
-}
-```
-
+if (state.timerSeconds <= 0) timerFinished();
 }, 1000);
 }
 
-/** Dừng timer */
+function pauseTimer() {
+state.timerRunning = false;
+clearInterval(state.timerInterval);
+document.getElementById(‘timer-play-btn’).textContent = ‘▶’;
+document.getElementById(‘timer-display’).className = ‘timer-display idle’;
+}
+
 function stopTimer() {
-if (STATE.timer.interval) {
-clearInterval(STATE.timer.interval);
-STATE.timer.interval = null;
-}
-STATE.timer.running = false;
-
-const btn = document.getElementById(‘timerStartBtn’);
-if (btn) btn.textContent = ‘▶ Bắt đầu’;
-
-const display = document.getElementById(‘timerDisplay’);
-if (display) {
-display.classList.remove(‘running’, ‘warning’);
-}
+state.timerRunning = false;
+clearInterval(state.timerInterval);
 }
 
-/** Reset timer về giá trị ban đầu */
 function resetTimer() {
 stopTimer();
-STATE.timer.remaining = STATE.timer.seconds;
+state.timerSeconds = state.timerPreset;
 updateTimerDisplay();
+document.getElementById(‘timer-play-btn’).textContent = ‘▶’;
+document.getElementById(‘timer-display’).className = ‘timer-display idle’;
+document.getElementById(‘btn-next’).classList.remove(‘visible’);
 }
 
-/** Cập nhật hiển thị timer */
-function updateTimerDisplay() {
-const m = Math.floor(STATE.timer.remaining / 60);
-const s = STATE.timer.remaining % 60;
-const display = document.getElementById(‘timerDisplay’);
-if (display) {
-display.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
-}
-
-/** Khi timer kết thúc */
 function timerFinished() {
-showToast(‘⏰ Hết giờ! Hoàn thành hoặc tiếp tục?’);
-// Rung điện thoại (nếu hỗ trợ)
-if (navigator.vibrate) {
-navigator.vibrate([300, 100, 300]);
-}
-}
+stopTimer();
+document.getElementById(‘timer-display’).className = ‘timer-display idle’;
+document.getElementById(‘timer-display’).textContent = ‘00:00’;
+document.getElementById(‘timer-play-btn’).textContent = ‘▶’;
+if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+document.getElementById(‘btn-next’).classList.add(‘visible’);
 
-// ═══════════════════════════════════════════════════
-// HÌNH ẢNH BÀI
-// ═══════════════════════════════════════════════════
-
-/** Xử lý upload hình ảnh cho lá bài */
-function handleImageUpload(event) {
-const file = event.target.files[0];
-if (!file || !STATE.currentCard) return;
-
-const reader = new FileReader();
-reader.onload = (e) => {
-const imageData = e.target.result;
-const key = `coupleplay_img_${STATE.currentCard.id}`;
-
-```
-try {
-  localStorage.setItem(key, imageData);
-  displayCardImage(imageData);
-  showToast('✅ Đã lưu hình ảnh!');
-} catch (err) {
-  // localStorage có thể đầy nếu ảnh quá lớn
-  showToast('❌ Hình ảnh quá lớn! Hãy chọn ảnh nhỏ hơn.');
-}
-```
-
-};
-reader.readAsDataURL(file);
-event.target.value = ‘’;
-}
-
-/** Hiển thị hình ảnh lên card */
-function displayCardImage(src) {
-const img = document.getElementById(‘cardImage’);
-const placeholder = document.getElementById(‘imagePlaceholder’);
-const actions = document.getElementById(‘imageActions’);
-
-img.src = src;
-img.classList.remove(‘hidden’);
-placeholder.style.display = ‘none’;
-actions.classList.remove(‘hidden’);
-}
-
-/** Load hình ảnh của lá bài từ localStorage */
-function loadCardImage(cardId) {
-const img = document.getElementById(‘cardImage’);
-const placeholder = document.getElementById(‘imagePlaceholder’);
-const actions = document.getElementById(‘imageActions’);
-
-const key = `coupleplay_img_${cardId}`;
-const saved = localStorage.getItem(key);
-
-if (saved) {
-displayCardImage(saved);
-} else {
-img.src = ‘’;
-img.classList.add(‘hidden’);
-placeholder.style.display = ‘flex’;
-actions.classList.add(‘hidden’);
-}
-}
-
-/** Xóa hình ảnh của lá bài */
-function removeCardImage() {
-if (!STATE.currentCard) return;
-const key = `coupleplay_img_${STATE.currentCard.id}`;
-localStorage.removeItem(key);
-loadCardImage(STATE.currentCard.id);
-showToast(‘Đã xóa hình ảnh’);
-}
-
-// ═══════════════════════════════════════════════════
-// LỊCH SỬ
-// ═══════════════════════════════════════════════════
-
-/** Mở modal lịch sử */
-function openHistory() {
-const modal = document.getElementById(‘modalHistory’);
-const list = document.getElementById(‘historyList’);
-
-if (STATE.session.history.length === 0) {
-list.innerHTML = ‘<p class="empty-text">Chưa rút lá bài nào trong phiên này</p>’;
-} else {
-list.innerHTML = STATE.session.history
-.slice().reverse() // Mới nhất lên trên
-.map((entry, i) => `<div class="history-item"> <span class="history-num">${STATE.session.history.length - i}</span> <div> <div class="history-title">${entry.card.suit} ${entry.card.title}</div> <div class="history-meta">Level ${entry.level} · ${entry.time}</div> </div> </div>`).join(’’);
-}
-
-modal.classList.remove(‘hidden’);
-}
-
-/** Đóng modal lịch sử */
-function closeHistory(event) {
-if (!event || event.target.id === ‘modalHistory’) {
-document.getElementById(‘modalHistory’).classList.add(‘hidden’);
-}
-}
-
-// ═══════════════════════════════════════════════════
-// SAFE WORD
-// ═══════════════════════════════════════════════════
-
-/** Thiết lập safe word button */
-function setupSafeWord() {
-document.getElementById(‘safeWordBtn’).onclick = openSafeWord;
-}
-
-/** Mở modal safe word */
-function openSafeWord() {
-document.getElementById(‘modalSafeWord’).classList.remove(‘hidden’);
-stopTimer(); // Dừng timer khi safe word được kích hoạt
-}
-
-/** Đóng modal safe word */
-function closeSafeWord(event) {
-if (!event || event.target.id === ‘modalSafeWord’) {
-document.getElementById(‘modalSafeWord’).classList.add(‘hidden’);
-}
-}
-
-// ═══════════════════════════════════════════════════
-// RESET SESSION
-// ═══════════════════════════════════════════════════
-
-/** Xác nhận reset phiên chơi */
-function confirmReset() {
-if (confirm(‘Reset phiên chơi? Toàn bộ lịch sử rút bài sẽ bị xóa.’)) {
-resetSession();
-}
-}
-
-/** Reset phiên chơi */
-function resetSession() {
-STATE.session = { drawn: [], history: [] };
-STATE.currentLevel = 1;
-saveSession();
-switchLevel(1);
-renderAllTabCounts();
-showToast(‘🔄 Đã reset phiên chơi mới!’);
-}
-
-// ═══════════════════════════════════════════════════
-// MUSIC PLAYER
-// ═══════════════════════════════════════════════════
-
-const audioPlayer = document.getElementById(‘audioPlayer’);
-
-/** Bật/tắt phần mở rộng music player */
-function toggleMusicExpand() {
-const body = document.getElementById(‘musicBody’);
-const chevron = document.getElementById(‘musicChevron’);
-const isExpanded = body.classList.toggle(‘expanded’);
-chevron.style.transform = isExpanded ? ‘rotate(180deg)’ : ‘’;
-}
-
-/** Load file nhạc từ máy */
-function loadMusicFile(event) {
-const file = event.target.files[0];
-if (!file) return;
-
-const url = URL.createObjectURL(file);
-const track = { name: file.name.replace(/.[^/.]+$/, ‘’), url, type: ‘local’ };
-
-STATE.music.playlist.push(track);
-renderPlaylist();
-playTrack(STATE.music.playlist.length - 1);
-event.target.value = ‘’;
-}
-
-/** Load nhạc từ URL */
-function loadMusicUrl() {
-const input = document.getElementById(‘musicUrlInput’);
-const url = input.value.trim();
-if (!url) return;
-
-// Kiểm tra YouTube
-const isYoutube = url.includes(‘youtube.com’) || url.includes(‘youtu.be’);
-if (isYoutube) {
-showToast(‘ℹ️ YouTube không hỗ trợ trực tiếp. Hãy dùng SoundCloud hoặc URL nhạc trực tiếp (.mp3)’);
-return;
-}
-
-const name = url.split(’/’).pop().replace(/?.*/, ‘’) || ‘Nhạc online’;
-const track = { name, url, type: ‘url’ };
-
-STATE.music.playlist.push(track);
-savePlaylistToStorage();
-renderPlaylist();
-playTrack(STATE.music.playlist.length - 1);
-input.value = ‘’;
-}
-
-/** Phát track theo index */
-function playTrack(index) {
-const playlist = STATE.music.playlist;
-if (index < 0 || index >= playlist.length) return;
-
-STATE.music.currentIndex = index;
-const track = playlist[index];
-
-audioPlayer.src = track.url;
-audioPlayer.volume = parseFloat(document.getElementById(‘volumeSlider’).value);
-audioPlayer.play().catch(() => showToast(‘❌ Không thể phát nhạc. Kiểm tra lại URL!’));
-
-STATE.music.playing = true;
-document.getElementById(‘musicPlayBtn’).textContent = ‘⏸’;
-document.getElementById(‘musicTitle’).textContent = track.name;
-
-renderPlaylist();
-}
-
-/** Bật/tắt nhạc */
-function toggleMusic() {
-if (STATE.music.playlist.length === 0) {
-showToast(‘Chưa có nhạc. Hãy upload hoặc nhập URL!’);
-return;
-}
-
-if (STATE.music.playing) {
-audioPlayer.pause();
-STATE.music.playing = false;
-document.getElementById(‘musicPlayBtn’).textContent = ‘▶’;
-} else {
-if (STATE.music.currentIndex === -1) {
-playTrack(0);
-} else {
-audioPlayer.play();
-STATE.music.playing = true;
-document.getElementById(‘musicPlayBtn’).textContent = ‘⏸’;
-}
-}
-}
-
-/** Bài trước */
-function prevTrack() {
-const prev = STATE.music.currentIndex - 1;
-if (prev >= 0) playTrack(prev);
-else playTrack(STATE.music.playlist.length - 1);
-}
-
-/** Bài tiếp theo */
-function nextTrack() {
-const next = STATE.music.currentIndex + 1;
-if (next < STATE.music.playlist.length) playTrack(next);
-else playTrack(0);
-}
-
-/** Điều chỉnh âm lượng */
-function setVolume(value) {
-audioPlayer.volume = parseFloat(value);
-// Cập nhật gradient của slider
-const slider = document.getElementById(‘volumeSlider’);
-slider.style.background = `linear-gradient(to right, var(--accent-rose) ${value*100}%, var(--bg-elevated) ${value*100}%)`;
-}
-
-/** Render danh sách playlist */
-function renderPlaylist() {
-const container = document.getElementById(‘playlist’);
-if (!container) return;
-
-if (STATE.music.playlist.length === 0) {
-container.innerHTML = ‘’;
-return;
-}
-
-container.innerHTML = STATE.music.playlist.map((track, i) => `<div class="playlist-item ${i === STATE.music.currentIndex ? 'active' : ''}" onclick="playTrack(${i})"> <span>${i === STATE.music.currentIndex ? '♪' : '○'}</span> <span class="track-name">${track.name}</span> <button onclick="removeTrack(event, ${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;">✕</button> </div>`).join(’’);
-}
-
-/** Xóa track khỏi playlist */
-function removeTrack(event, index) {
-event.stopPropagation();
-STATE.music.playlist.splice(index, 1);
-if (STATE.music.currentIndex >= STATE.music.playlist.length) {
-STATE.music.currentIndex = STATE.music.playlist.length - 1;
-}
-savePlaylistToStorage();
-renderPlaylist();
-}
-
-/** Lưu playlist (chỉ URL, không lưu blob) vào localStorage */
-function savePlaylistToStorage() {
-const urlTracks = STATE.music.playlist.filter(t => t.type === ‘url’);
-localStorage.setItem(‘coupleplay_playlist’, JSON.stringify(urlTracks));
-}
-
-// Tự động next khi hết nhạc
-audioPlayer.addEventListener(‘ended’, () => {
-if (STATE.music.playlist.length > 1) nextTrack();
-});
-
-// ═══════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════
-
-/** Lấy bài theo level */
-function getCardsByLevel(level) {
-return STATE.cards.filter(c => c.level === level);
-}
-
-/** Format thời gian từ giây */
-function formatDuration(seconds) {
-if (seconds < 60) return `${seconds}s`;
-const m = Math.floor(seconds / 60);
-const s = seconds % 60;
-return s > 0 ? `${m}p${s}s` : `${m} phút`;
-}
-
-/** Hiển thị toast notification */
-function showToast(message, duration = 3000) {
-const toast = document.getElementById(‘toast’);
-toast.textContent = message;
-toast.classList.remove(‘hidden’);
-
-// Force reflow để animation hoạt động đúng
-toast.offsetHeight;
-toast.classList.add(‘show’);
-
+// Glow flash
+const disp = document.getElementById(‘timer-display’);
+disp.style.color      = ‘#ff2d78’;
+disp.style.textShadow = ‘0 0 40px rgba(255,45,120,0.9)’;
 setTimeout(() => {
-toast.classList.remove(‘show’);
-setTimeout(() => toast.classList.add(‘hidden’), 300);
-}, duration);
+disp.style.color      = ‘’;
+disp.style.textShadow = ‘’;
+disp.className        = ‘timer-display idle’;
+}, 2200);
 }
 
-// ═══════════════════════════════════════════════════
-// TAILWIND CONFIG — Custom colors
-// ═══════════════════════════════════════════════════
+function updateTimerDisplay() {
+const s = state.timerSeconds;
+document.getElementById(‘timer-display’).textContent =
+`${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+}
 
-// Tailwind JIT config (nếu cần mở rộng)
-if (typeof tailwind !== ‘undefined’) {
-tailwind.config = {
-darkMode: ‘class’,
-theme: {
-extend: {
-colors: {
-rose: { DEFAULT: ‘#c0144c’, dark: ‘#8b0626’ },
-wine: ‘#6b1427’,
-plum: ‘#4a0d2e’,
-gold: ‘#c9a84c’,
-cream: ‘#f0e6d3’
+/* ─────────────────────────────────────────────────────────────
+HEAT
+───────────────────────────────────────────────────────────── */
+function increaseHeat() {
+if (state.heatForced < 4) {
+state.heatForced++;
+for (let i = 0; i < 5; i++) {
+document.getElementById(`dot-${i}`).classList.toggle(‘on’, i <= state.heatForced);
+}
+const fill = document.getElementById(‘heat-fill’);
+fill.style.width = Math.min(100, parseInt(fill.style.width) + 18) + ‘%’;
+showToast(‘🔥 Nhiệt độ tăng lên!’);
+} else {
+showToast(‘🔥 Đã đạt mức cao nhất!’);
 }
 }
+
+/* ─────────────────────────────────────────────────────────────
+TOAST
+───────────────────────────────────────────────────────────── */
+function showToast(msg) {
+const t = document.createElement(‘div’);
+t.style.cssText = `position:fixed;bottom:110px;left:50%;transform:translateX(-50%); background:rgba(26,0,16,0.92);border:1px solid rgba(200,16,46,0.4); color:#f5e8de;font-family:'Outfit',sans-serif;font-size:0.82rem;font-weight:500; padding:10px 22px;border-radius:30px;z-index:600; backdrop-filter:blur(14px);white-space:nowrap; opacity:0;transition:opacity 0.28s; box-shadow:0 4px 24px rgba(200,16,46,0.3);`;
+t.textContent = msg;
+document.body.appendChild(t);
+requestAnimationFrame(() => {
+t.style.opacity = ‘1’;
+setTimeout(() => {
+t.style.opacity = ‘0’;
+setTimeout(() => t.remove(), 300);
+}, 1800);
+});
+}
+
+/* ─────────────────────────────────────────────────────────────
+SAFE WORD
+───────────────────────────────────────────────────────────── */
+function triggerSafeWord() {
+const overlay = document.getElementById(‘safe-overlay’);
+document.getElementById(‘safe-word-shown’).textContent = `"${state.safeWord}"`;
+overlay.style.display = ‘flex’;
+stopTimer();
+if (navigator.vibrate) navigator.vibrate([300, 200, 300]);
+}
+
+function hideSafeWord() {
+document.getElementById(‘safe-overlay’).style.display = ‘none’;
+}
+
+/* ─────────────────────────────────────────────────────────────
+HISTORY
+───────────────────────────────────────────────────────────── */
+function showHistory() {
+renderHistory();
+document.getElementById(‘screen-history’).classList.remove(‘hidden’);
+}
+
+function hideHistory() {
+document.getElementById(‘screen-history’).classList.add(‘hidden’);
+}
+
+function renderHistory() {
+const list = document.getElementById(‘history-list’);
+if (!state.history.length) {
+list.innerHTML = `<p style="text-align:center;color:rgba(245,232,222,0.25);font-size:0.85rem;margin-top:50px;font-family:'Playfair Display',serif;font-style:italic;">Chưa có lá bài nào được rút...</p>`;
+return;
+}
+list.innerHTML = state.history.map((h, i) => `<div class="history-item"> <span class="history-num">${i + 1}</span> <div class="history-info"> <h4>${h.title}</h4> <p>${h.desc.slice(0, 65)}${h.desc.length > 65 ? '…' : ''}</p> </div> <span style="font-size:0.62rem;color:${h.level===1?'rgba(201,164,90,0.55)':h.level===2?'rgba(212,56,126,0.6)':'rgba(255,45,120,0.7)'};margin-left:auto;padding-left:8px;white-space:nowrap;"> ${'●'.repeat(h.level)} </span> </div>`).join(’’);
+}
+
+function clearHistory() {
+state.history = [];
+localStorage.removeItem(‘sd_history’);
+renderHistory();
+}
+
+/* ─────────────────────────────────────────────────────────────
+IMPORT MODAL
+───────────────────────────────────────────────────────────── */
+function openImportModal() {
+document.getElementById(‘import-modal’).classList.add(‘open’);
+}
+
+function closeImportModal(e) {
+if (!e || e.target === document.getElementById(‘import-modal’)) {
+document.getElementById(‘import-modal’).classList.remove(‘open’);
+}
+}
+
+function importManual() {
+const raw = document.getElementById(‘manual-import’).value.trim();
+if (!raw) return;
+let added = 0;
+raw.split(’\n’).filter(l => l.trim()).forEach(line => {
+const parts = line.split(’|’);
+if (parts.length >= 2) {
+state.cards.push({ title: parts[0].trim(), desc: parts[1].trim(), level: parseInt(parts[2]) || 1 });
+added++;
+}
+});
+if (added > 0) {
+localStorage.setItem(‘sd_cards’, JSON.stringify(state.cards));
+updateDeckLabel();
+showToast(`✓ Đã thêm ${added} lá bài!`);
+document.getElementById(‘manual-import’).value = ‘’;
+closeImportModal();
+}
+}
+
+function importCards(input) {
+const file = input.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = e => {
+let added = 0;
+e.target.result.split(’\n’).filter(l => l.trim()).forEach((line, idx) => {
+if (idx === 0 && line.toLowerCase().includes(‘title’)) return;
+const parts = line.split(’,’);
+if (parts.length >= 2) {
+state.cards.push({ title: parts[0].replace(/”/g,’’).trim(), desc: parts[1].replace(/”/g,’’).trim(), level: parseInt(parts[2]) || 1 });
+added++;
+}
+});
+if (added > 0) {
+localStorage.setItem(‘sd_cards’, JSON.stringify(state.cards));
+updateDeckLabel();
+showToast(`✓ Import ${added} lá bài!`);
+closeImportModal();
 }
 };
+reader.readAsText(file, ‘UTF-8’);
 }
+
+/* ─────────────────────────────────────────────────────────────
+PHOTO UPLOAD
+───────────────────────────────────────────────────────────── */
+function triggerPhotoUpload() {
+document.getElementById(‘photo-input’).click();
+}
+
+function loadPhoto(input) {
+const file = input.files[0];
+if (!file) return;
+const area = document.getElementById(‘photo-upload-area’);
+const old  = area.querySelector(‘img’);
+if (old) old.remove();
+const img = document.createElement(‘img’);
+img.src = URL.createObjectURL(file);
+img.style.borderRadius = ‘14px’;
+area.appendChild(img);
+area.querySelectorAll(‘span’).forEach(s => s.style.display = ‘none’);
+}
+
+/* ─────────────────────────────────────────────────────────────
+MUSIC
+───────────────────────────────────────────────────────────── */
+function loadMusic(input) {
+const file = input.files[0];
+if (!file) return;
+const audio = document.getElementById(‘bg-music’);
+audio.src = URL.createObjectURL(file);
+document.getElementById(‘music-name’).textContent = file.name.replace(/.[^.]+$/, ‘’);
+audio.play();
+state.musicPlaying = true;
+document.getElementById(‘music-play-btn’).textContent = ‘⏸’;
+}
+
+function toggleMusic() {
+const audio = document.getElementById(‘bg-music’);
+if (!audio.src) return;
+if (state.musicPlaying) {
+audio.pause();
+state.musicPlaying = false;
+document.getElementById(‘music-play-btn’).textContent = ‘▶’;
+} else {
+audio.play();
+state.musicPlaying = true;
+document.getElementById(‘music-play-btn’).textContent = ‘⏸’;
+}
+}
+
+/* ─────────────────────────────────────────────────────────────
+TOUCH GUARDS
+───────────────────────────────────────────────────────────── */
+document.addEventListener(‘touchmove’, function (e) {
+if (e.target.closest(’.scroll-area’) || e.target.closest(’.card-desc’)) return;
+e.preventDefault();
+}, { passive: false });
+
+let _lastTap = 0;
+document.addEventListener(‘touchend’, function (e) {
+const now = Date.now();
+if (now - _lastTap < 290) e.preventDefault();
+_lastTap = now;
+}, { passive: false });
+
+/* ─────────────────────────────────────────────────────────────
+BOOT
+───────────────────────────────────────────────────────────── */
+document.addEventListener(‘DOMContentLoaded’, init);
