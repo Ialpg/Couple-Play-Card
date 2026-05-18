@@ -1,640 +1,668 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Secret Draw</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.tailwindcss.com"></script>
-
-<script>
-tailwind.config = {
-  theme: { extend: {
-    colors: {
-      void:'#050508', obsidian:'#0A0A0F', ink:'#0F0F18',
-      shadow:'#14131E', velvet:'#1C1A2E',
-    },
-    fontFamily: {
-      display:['"Playfair Display"','Georgia','serif'],
-      body:['"Outfit"','sans-serif'],
-    },
-  }}
-}
-</script>
-
-<style>
-*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:#050508}
-body{font-family:'Outfit',sans-serif;color:rgba(255,240,245,0.9);position:relative}
-
-:root{
-  --crimson:#8B0020;--crimson-b:#C8102E;--crimson-g:#FF1744;
-  --magenta:#9F2A6B;--magenta-n:#E91E8C;--magenta-p:#F48FB1;
-  --gold:#B8960C;--gold-w:#D4A017;--gold-l:#F0C040;
-  --glow-r:rgba(200,16,46,0.35);--glow-m:rgba(233,30,140,0.3);
-}
-
-/* SCREENS */
-.screen{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .7s cubic-bezier(.4,0,.2,1),transform .7s cubic-bezier(.4,0,.2,1)}
-.screen.hidden{opacity:0;pointer-events:none;transform:scale(.96)}
-
-#bg-canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
-
-/* Grain overlay */
-body::after{content:'';position:fixed;inset:0;z-index:1;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");opacity:.4;mix-blend-mode:overlay}
-
-.scroll-area{overflow-y:auto;-webkit-overflow-scrolling:touch}
-.scroll-area::-webkit-scrollbar{width:2px}
-.scroll-area::-webkit-scrollbar-thumb{background:var(--magenta);border-radius:1px}
-
-/* ── HOME ── */
-#screen-home{background:radial-gradient(ellipse 80% 60% at 50% 110%,rgba(139,0,32,.25) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 20%,rgba(159,42,107,.12) 0%,transparent 50%),#050508}
-
-.orb{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;animation:orb-float 8s ease-in-out infinite}
-.orb-1{width:280px;height:280px;background:radial-gradient(circle,rgba(139,0,32,.2) 0%,transparent 70%);top:-40px;left:-60px;animation-delay:0s}
-.orb-2{width:180px;height:180px;background:radial-gradient(circle,rgba(159,42,107,.15) 0%,transparent 70%);bottom:12%;right:-30px;animation-delay:-3s}
-.orb-3{width:130px;height:130px;background:radial-gradient(circle,rgba(212,160,23,.1) 0%,transparent 70%);top:28%;left:52%;animation-delay:-5s}
-@keyframes orb-float{0%,100%{transform:translateY(0) scale(1)}33%{transform:translateY(-18px) scale(1.05)}66%{transform:translateY(10px) scale(.97)}}
-
-.neon-title{font-family:'Playfair Display',serif;font-size:clamp(3rem,12vw,5.2rem);font-weight:700;font-style:italic;letter-spacing:-.01em;line-height:.95;background:linear-gradient(160deg,#F0C040 0%,#D4A017 25%,#fff8f0 50%,#C8102E 75%,#9F2A6B 100%);background-size:200% 200%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:title-sh 6s ease-in-out infinite;filter:drop-shadow(0 0 28px rgba(200,16,46,.4))}
-@keyframes title-sh{0%,100%{background-position:0% 0%}50%{background-position:100% 100%}}
-
-.neon-sub{font-family:'Outfit',sans-serif;font-weight:200;letter-spacing:.35em;text-transform:uppercase;font-size:clamp(.6rem,2.5vw,.78rem);color:rgba(159,42,107,.7)}
-
-.btn-start{position:relative;background:linear-gradient(135deg,#5C0015 0%,#8B0020 40%,#C8102E 70%,#9F2A6B 100%);border:none;color:rgba(255,248,240,.95);font-family:'Playfair Display',serif;font-style:italic;font-size:clamp(1.1rem,4vw,1.4rem);font-weight:500;letter-spacing:.08em;padding:18px 48px;border-radius:60px;cursor:pointer;overflow:hidden;transition:all .4s cubic-bezier(.4,0,.2,1);box-shadow:0 0 0 1px rgba(200,16,46,.3),0 8px 32px rgba(139,0,32,.5),0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08);-webkit-user-select:none;animation:pulse-btn 3s ease-in-out infinite}
-@keyframes pulse-btn{0%,100%{box-shadow:0 0 0 1px rgba(200,16,46,.3),0 8px 32px rgba(139,0,32,.5),0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.08)}50%{box-shadow:0 0 0 1px rgba(200,16,46,.5),0 8px 50px rgba(200,16,46,.6),0 0 80px rgba(159,42,107,.2),0 2px 8px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.1)}}
-.btn-start::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.08) 50%,transparent 100%);transform:skewX(-20deg) translateX(-150%);transition:transform .6s ease}
-.btn-start:active{transform:scale(.97);animation:none}
-.btn-start:active::before{transform:skewX(-20deg) translateX(200%)}
-
-.btn-ghost{background:rgba(255,255,255,.03);border:1px solid rgba(159,42,107,.25);color:rgba(159,42,107,.7);font-family:'Outfit',sans-serif;font-weight:300;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;padding:11px 22px;border-radius:40px;cursor:pointer;transition:all .3s ease;backdrop-filter:blur(8px);-webkit-user-select:none}
-.btn-ghost:active{background:rgba(159,42,107,.12);border-color:rgba(159,42,107,.5);color:var(--magenta-p)}
-
-.sw-field{background:rgba(255,255,255,.03);border:1px solid rgba(200,16,46,.2);border-radius:30px;color:rgba(255,240,245,.7);font-family:'Outfit',sans-serif;font-size:.78rem;letter-spacing:.08em;padding:7px 16px;width:128px;text-align:center;outline:none;transition:border-color .3s}
-.sw-field:focus{border-color:rgba(200,16,46,.5)}
-
-.line-div{height:1px;background:linear-gradient(90deg,transparent,rgba(159,42,107,.3),rgba(200,16,46,.3),rgba(159,42,107,.3),transparent);width:170px}
-
-/* ── DECK ── */
-#screen-deck{background:radial-gradient(ellipse 100% 80% at 50% 100%,rgba(139,0,32,.16) 0%,transparent 55%),#050508}
-
-.deck-stage{position:relative;width:min(230px,58vw);height:min(345px,87vw);perspective:900px;cursor:grab}
-.deck-stage:active{cursor:grabbing}
-
-.s-layer{position:absolute;inset:0;border-radius:22px;overflow:hidden;transition:transform .4s ease}
-.s-layer:nth-child(1){transform:rotate(-7deg) translateY(14px) translateX(-8px);opacity:.4}
-.s-layer:nth-child(2){transform:rotate(-3deg) translateY(8px) translateX(-3px);opacity:.65}
-.s-layer:nth-child(3){transform:rotate(2deg) translateY(4px);opacity:.82}
-.s-layer.top{transform:rotate(0deg);opacity:1}
-
-.cb-face{width:100%;height:100%;background:repeating-linear-gradient(45deg,rgba(200,16,46,.035) 0,rgba(200,16,46,.035) 1px,transparent 1px,transparent 14px),repeating-linear-gradient(-45deg,rgba(159,42,107,.025) 0,rgba(159,42,107,.025) 1px,transparent 1px,transparent 14px),linear-gradient(145deg,#1C1A2E 0%,#14131E 40%,#0F0F18 70%,#1a0a14 100%);border:1px solid rgba(200,16,46,.22);border-radius:22px;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04),inset 0 1px 0 rgba(255,255,255,.06)}
-.cb-face::before{content:'';position:absolute;inset:10px;border:1px solid rgba(200,16,46,.12);border-radius:15px;pointer-events:none}
-.cb-face::after{content:'';position:absolute;inset:17px;border:1px solid rgba(212,160,23,.07);border-radius:10px;pointer-events:none}
-
-.cb-sym{font-size:3.2rem;color:rgba(139,0,32,.4);text-shadow:0 0 28px rgba(200,16,46,.3);animation:sym-breathe 4s ease-in-out infinite;pointer-events:none}
-@keyframes sym-breathe{0%,100%{opacity:.4;transform:scale(1)}50%{opacity:.65;transform:scale(1.05);text-shadow:0 0 50px rgba(200,16,46,.5)}}
-
-.pull-ind{position:absolute;bottom:-52px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none;animation:pull-b 2.5s ease-in-out infinite}
-@keyframes pull-b{0%,100%{transform:translateX(-50%) translateY(0);opacity:.6}50%{transform:translateX(-50%) translateY(-8px);opacity:1}}
-.pull-arr{width:20px;height:20px;border-left:1.5px solid rgba(200,16,46,.5);border-top:1.5px solid rgba(200,16,46,.5);transform:rotate(45deg);border-radius:2px 0 0 0}
-.pull-arr+.pull-arr{opacity:.35;margin-top:-8px}
-.pull-lbl{font-size:.58rem;letter-spacing:.2em;color:rgba(200,16,46,.45);font-family:'Outfit',sans-serif;font-weight:300;text-transform:uppercase;margin-top:5px}
-
-/* ── PLAY SCREEN ── */
-#screen-play{background:#050508;padding:0}
-.play-layout{width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden}
-
-.play-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 9px;flex-shrink:0;position:relative;background:linear-gradient(180deg,rgba(10,10,15,.96) 0%,rgba(10,10,15,0) 100%);z-index:2}
-@supports(padding:max(0px)){.play-hdr{padding-top:max(14px,env(safe-area-inset-top))}}
-
-.hdr-back{background:none;border:none;color:rgba(159,42,107,.5);font-size:1.2rem;cursor:pointer;padding:6px;transition:color .2s}
-.hdr-back:active{color:var(--magenta-p)}
-
-.round-pill{background:rgba(255,255,255,.04);border:1px solid rgba(159,42,107,.18);border-radius:20px;padding:4px 13px;font-size:.68rem;letter-spacing:.12em;color:rgba(159,42,107,.55);font-family:'Outfit',sans-serif;font-weight:300;text-transform:uppercase}
-
-.safe-pill{background:rgba(139,0,32,.14);border:1px solid rgba(200,16,46,.22);border-radius:20px;padding:4px 11px;font-size:.63rem;letter-spacing:.1em;color:rgba(200,16,46,.58);font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;text-transform:uppercase}
-.safe-pill:active{background:rgba(139,0,32,.4);color:#ff6b7a}
-
-/* card scene */
-.card-scene{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:6px 16px 0;perspective:1400px;position:relative}
-.card-scene::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% 45%,rgba(139,0,32,.07) 0%,transparent 70%);pointer-events:none;z-index:0}
-
-.card-3d{width:min(275px,82vw);height:min(415px,72vw*1.51);position:relative;transform-style:preserve-3d;transition:transform .75s cubic-bezier(.34,1.2,.64,1);cursor:pointer;z-index:1}
-.card-3d.flipped{transform:rotateY(180deg)}
-
-.face-3d{position:absolute;inset:0;border-radius:22px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
-
-.card-front-face{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(200,16,46,.11) 0%,transparent 50%),linear-gradient(160deg,#1C1A2E 0%,#14131E 40%,#0F0F18 70%,#130a10 100%);border:1px solid rgba(200,16,46,.18);box-shadow:0 28px 75px rgba(0,0,0,.8),0 0 0 1px rgba(255,255,255,.04),0 0 55px rgba(139,0,32,.1),inset 0 1px 0 rgba(255,255,255,.07);display:flex;flex-direction:column;padding:20px 17px 14px;height:100%;position:relative}
-.card-front-face::before{content:'';position:absolute;inset:9px;border:1px solid rgba(212,160,23,.065);border-radius:16px;pointer-events:none}
-
-.card-back-face2{background:linear-gradient(160deg,#14131E 0%,#0F0F18 100%);border:1px solid rgba(200,16,46,.18);box-shadow:0 28px 75px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05);transform:rotateY(180deg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;padding:22px;height:100%}
-
-/* level tag */
-.l-tag{display:inline-flex;align-items:center;gap:5px;font-size:.6rem;letter-spacing:.18em;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:400;padding:4px 11px;border-radius:30px;align-self:flex-start;margin-bottom:9px}
-.t-gentle{background:rgba(212,160,23,.1);border:1px solid rgba(212,160,23,.23);color:rgba(212,160,23,.8)}
-.t-warm{background:rgba(159,42,107,.12);border:1px solid rgba(159,42,107,.28);color:rgba(196,68,126,.9)}
-.t-hot{background:rgba(139,0,32,.17);border:1px solid rgba(200,16,46,.33);color:rgba(255,80,80,.9)}
-
-.c-suit{font-size:1.55rem;margin-bottom:3px;display:block;filter:drop-shadow(0 0 11px rgba(200,16,46,.4))}
-
-.c-title{font-family:'Playfair Display',serif;font-style:italic;font-weight:500;font-size:clamp(1.2rem,5.5vw,1.65rem);color:rgba(255,248,240,.95);line-height:1.15;margin-bottom:9px;text-shadow:0 2px 16px rgba(0,0,0,.5);letter-spacing:.01em}
-
-.c-rule{height:1px;background:linear-gradient(90deg,transparent,rgba(200,16,46,.38),rgba(159,42,107,.28),transparent);margin-bottom:11px;flex-shrink:0}
-
-.c-body{font-family:'Outfit',sans-serif;font-weight:300;font-size:clamp(.8rem,3vw,.9rem);line-height:1.72;color:rgba(255,226,236,.73);flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.c-body::-webkit-scrollbar{display:none}
-
-.flip-hint{text-align:center;font-size:.6rem;letter-spacing:.12em;color:rgba(212,160,23,.28);font-family:'Outfit',sans-serif;margin-top:9px;flex-shrink:0;text-transform:uppercase}
-
-.photo-frame{width:100%;flex:1;border:1px dashed rgba(200,16,46,.18);border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;background:rgba(139,0,32,.04);position:relative;overflow:hidden;transition:border-color .3s;min-height:150px}
-.photo-frame:active{border-color:rgba(200,16,46,.38)}
-.photo-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:15px}
-.p-lbl{font-size:.7rem;color:rgba(200,16,46,.32);font-family:'Outfit',sans-serif;font-weight:300;text-align:center;pointer-events:none;letter-spacing:.07em}
-
-/* timer zone */
-.timer-zone{flex-shrink:0;padding:9px 16px 14px;background:linear-gradient(0deg,rgba(10,10,15,.97) 80%,transparent 100%)}
-@supports(padding:max(0px)){.timer-zone{padding-bottom:max(14px,env(safe-area-inset-bottom))}}
-
-.heat-strip{height:2px;background:rgba(255,255,255,.04);border-radius:1px;margin-bottom:9px;overflow:hidden}
-.heat-fill{height:100%;background:linear-gradient(90deg,#5C0015,#C8102E,#E91E8C);border-radius:1px;transition:width 1s cubic-bezier(.4,0,.2,1);box-shadow:0 0 8px rgba(233,30,140,.4);position:relative}
-.heat-fill::after{content:'';position:absolute;right:0;top:-1px;width:4px;height:4px;border-radius:50%;background:#fff;box-shadow:0 0 6px rgba(233,30,140,.8)}
-
-.clock{text-align:center;font-family:'Playfair Display',serif;font-weight:400;font-size:clamp(3rem,12vw,3.8rem);letter-spacing:.04em;line-height:1;margin-bottom:7px;transition:all .4s ease}
-.clock.idle{color:rgba(180,155,165,.3);text-shadow:none}
-.clock.running{color:rgba(255,240,220,.9);text-shadow:0 0 18px rgba(212,160,23,.38),0 0 38px rgba(200,16,46,.13)}
-.clock.warning{color:#FF6B7A;text-shadow:0 0 18px rgba(255,107,122,.6),0 0 38px rgba(200,16,46,.28);animation:wpulse .4s ease-in-out infinite}
-@keyframes wpulse{0%,100%{opacity:1}50%{opacity:.6}}
-
-.preset-row{display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-bottom:7px}
-.chip{background:rgba(255,255,255,.03);border:1px solid rgba(159,42,107,.16);color:rgba(196,68,126,.5);font-size:.7rem;font-family:'Outfit',sans-serif;font-weight:300;padding:5px 12px;border-radius:30px;cursor:pointer;transition:all .2s;letter-spacing:.05em;-webkit-user-select:none}
-.chip.active,.chip:active{background:rgba(139,0,32,.24);border-color:rgba(200,16,46,.48);color:rgba(255,175,175,.9)}
-
-.ctrl-row{display:flex;gap:9px;justify-content:center;align-items:center;margin-bottom:7px}
-.ctrl{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid rgba(159,42,107,.18);color:rgba(159,42,107,.55);font-size:1.05rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;-webkit-user-select:none}
-.ctrl:active{background:rgba(159,42,107,.14);border-color:rgba(159,42,107,.38);color:var(--magenta-p)}
-.ctrl-main{width:60px;height:60px;font-size:1.45rem;background:linear-gradient(135deg,#5C0015 0%,#8B0020 50%,#C8102E 100%);border:1px solid rgba(200,16,46,.38);color:rgba(255,215,215,.95);box-shadow:0 4px 22px rgba(139,0,32,.48),0 0 0 1px rgba(255,255,255,.04),inset 0 1px 0 rgba(255,255,255,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s;-webkit-user-select:none}
-.ctrl-main:active{transform:scale(.94)}
-
-.btn-next{width:100%;padding:13px;background:linear-gradient(135deg,rgba(28,26,46,.8) 0%,rgba(20,19,30,.9) 100%);border:1px solid rgba(159,42,107,.28);color:rgba(196,68,126,.88);font-family:'Playfair Display',serif;font-style:italic;font-size:1.05rem;letter-spacing:.08em;border-radius:11px;cursor:pointer;transition:all .3s;backdrop-filter:blur(8px);display:none;-webkit-user-select:none}
-.btn-next.visible{display:block;animation:slide-up .4s cubic-bezier(.4,0,.2,1) forwards}
-@keyframes slide-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.btn-next:active{background:rgba(159,42,107,.14);border-color:rgba(200,16,46,.48)}
-
-/* HEAT FAB */
-.heat-fab{position:fixed;bottom:22px;right:15px;z-index:200;background:linear-gradient(135deg,#8B0020,#C8102E,#9F2A6B);border:none;color:rgba(255,225,225,.95);font-family:'Outfit',sans-serif;font-size:.76rem;font-weight:500;letter-spacing:.06em;padding:11px 17px;border-radius:30px;cursor:pointer;display:none;align-items:center;gap:7px;box-shadow:0 6px 26px rgba(200,16,46,.43),0 0 0 1px rgba(255,255,255,.06);transition:all .3s;-webkit-user-select:none}
-.heat-fab.visible{display:flex;animation:fab-in .4s cubic-bezier(.34,1.56,.64,1) forwards}
-@keyframes fab-in{from{opacity:0;transform:scale(.6) translateY(18px)}to{opacity:1;transform:scale(1) translateY(0)}}
-.heat-fab:active{transform:scale(.95)}
-.h-dots{display:flex;gap:3px;align-items:center}
-.h-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.22);transition:all .3s}
-.h-dot.on{background:rgba(255,255,255,.9);box-shadow:0 0 5px rgba(255,255,255,.5)}
-
-/* HISTORY */
-#screen-history{background:rgba(5,5,8,.98);backdrop-filter:blur(24px);z-index:200;justify-content:flex-start}
-.h-hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 11px;border-bottom:1px solid rgba(139,0,32,.14);width:100%;max-width:480px;flex-shrink:0}
-.h-list{width:100%;max-width:480px;padding:4px 16px 22px;overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;min-height:0}
-.h-item{display:flex;gap:11px;align-items:flex-start;padding:13px 0;border-bottom:1px solid rgba(139,0,32,.1)}
-.h-num{font-family:'Playfair Display',serif;font-size:.95rem;color:rgba(200,16,46,.28);min-width:21px;line-height:1.4}
-.h-info h4{font-family:'Playfair Display',serif;font-style:italic;font-size:.92rem;color:rgba(255,240,245,.82);margin:0 0 3px;font-weight:400}
-.h-info p{font-size:.72rem;color:rgba(255,215,225,.38);margin:0;line-height:1.4;font-family:'Outfit',sans-serif;font-weight:300}
-.h-lv{margin-left:auto;font-size:.58rem;padding-left:8px;white-space:nowrap;letter-spacing:2px}
-
-/* MODAL */
-.modal-bg{position:fixed;inset:0;z-index:300;background:rgba(5,5,8,.88);backdrop-filter:blur(20px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s ease}
-.modal-bg.open{opacity:1;pointer-events:all}
-.modal-panel{width:100%;max-width:480px;background:linear-gradient(180deg,#1C1A2E 0%,#14131E 100%);border:1px solid rgba(139,0,32,.22);border-bottom:none;border-radius:22px 22px 0 0;padding:20px 18px 38px;transform:translateY(100%);transition:transform .4s cubic-bezier(.4,0,.2,1)}
-.modal-bg.open .modal-panel{transform:translateY(0)}
-.m-handle{width:34px;height:4px;background:rgba(200,16,46,.22);border-radius:2px;margin:0 auto 16px}
-
-textarea{width:100%;background:rgba(139,0,32,.08);border:1px solid rgba(139,0,32,.23);color:rgba(255,225,235,.85);border-radius:8px;padding:9px;font-size:.78rem;font-family:'Outfit',sans-serif;font-weight:300;resize:none;outline:none;line-height:1.6}
-textarea:focus{border-color:rgba(200,16,46,.43)}
-input[type=file]{background:rgba(139,0,32,.08);border:1px solid rgba(139,0,32,.23);color:rgba(255,215,225,.68);border-radius:6px;padding:9px;font-size:.78rem;font-family:'Outfit',sans-serif;width:100%;cursor:pointer}
-.f-lbl{font-size:.65rem;letter-spacing:.14em;color:rgba(212,160,23,.44);text-transform:uppercase;margin-bottom:4px;display:block;font-family:'Outfit',sans-serif;font-weight:400}
-
-/* music player */
-.music-pl{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.03);border:1px solid rgba(159,42,107,.14);border-radius:28px;padding:7px 13px;backdrop-filter:blur(8px)}
-.m-ctrl{background:none;border:none;color:rgba(212,160,23,.48);font-size:.98rem;cursor:pointer;padding:2px;transition:color .2s;-webkit-user-select:none}
-.m-ctrl:active{color:var(--gold-l)}
-.m-name{font-size:.66rem;color:rgba(255,215,225,.38);font-family:'Outfit',sans-serif;font-weight:300;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:108px;letter-spacing:.04em}
-
-/* card fly animation */
-.fly-card{position:fixed;z-index:500;pointer-events:none;border-radius:22px;background:linear-gradient(145deg,#1C1A2E,#0F0F18);border:1px solid rgba(200,16,46,.23);box-shadow:0 30px 80px rgba(0,0,0,.9),0 0 50px rgba(200,16,46,.13)}
-.sparkle{position:fixed;z-index:400;pointer-events:none;border-radius:50%;width:3px;height:3px}
-
-.toast{position:fixed;bottom:108px;left:50%;transform:translateX(-50%);background:rgba(28,26,46,.95);border:1px solid rgba(159,42,107,.27);color:rgba(255,225,235,.9);font-family:'Outfit',sans-serif;font-size:.8rem;font-weight:300;padding:9px 20px;border-radius:28px;z-index:600;backdrop-filter:blur(12px);white-space:nowrap;letter-spacing:.05em;opacity:0;transition:opacity .3s;box-shadow:0 4px 18px rgba(0,0,0,.4)}
-
-@keyframes fade-in{from{opacity:0}to{opacity:1}}
-body{animation:fade-in .9s ease forwards}
-
-.sec-tit{font-family:'Playfair Display',serif;font-style:italic;font-weight:400;font-size:1.45rem;color:rgba(255,240,245,.65);letter-spacing:.04em}
-.deck-cnt{font-size:.68rem;color:rgba(200,16,46,.38);letter-spacing:.12em;font-family:'Outfit',sans-serif;font-weight:300;text-transform:uppercase}
-</style>
-</head>
-<body>
-
-<canvas id="bg-canvas"></canvas>
-
-<!-- ═══════════════ HOME ═══════════════ -->
-<div id="screen-home" class="screen" style="overflow:hidden;">
-  <div class="orb orb-1"></div>
-  <div class="orb orb-2"></div>
-  <div class="orb orb-3"></div>
-
-  <div class="flex flex-col items-center gap-5 px-8 text-center" style="z-index:2;width:100%;max-width:360px;">
-
-    <!-- Seal -->
-    <div style="width:76px;height:76px;border-radius:50%;background:radial-gradient(circle,rgba(139,0,32,.3) 0%,rgba(14,13,24,.8) 70%);border:1px solid rgba(200,16,46,.18);box-shadow:0 0 38px rgba(139,0,32,.28),inset 0 0 28px rgba(139,0,32,.14);display:flex;align-items:center;justify-content:center;animation:sym-breathe 4s ease-in-out infinite;">
-      <span style="font-size:2.2rem;filter:drop-shadow(0 0 9px rgba(200,16,46,.6));">♥</span>
-    </div>
-
-    <div>
-      <h1 class="neon-title">Secret<br>Draw</h1>
-      <p class="neon-sub mt-2">Trò Chơi Tình Yêu</p>
-    </div>
-
-    <div class="line-div"></div>
-
-    <p style="font-family:'Playfair Display',serif;font-style:italic;color:rgba(255,195,215,.32);font-size:.85rem;line-height:1.75;max-width:230px;font-weight:400;">
-      Mỗi lá bài — một bí mật dành riêng cho hai người...
-    </p>
-
-    <button class="btn-start" onclick="startGame()">Bắt Đầu Chơi</button>
-
-    <div class="flex gap-3 flex-wrap justify-center">
-      <button class="btn-ghost" onclick="openImportModal()">＋ Thêm Bộ Bài</button>
-      <button class="btn-ghost" onclick="showHistory()">◎ Lịch Sử</button>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:10px;margin-top:2px;">
-      <span style="font-size:.6rem;color:rgba(200,16,46,.32);letter-spacing:.15em;text-transform:uppercase;font-family:'Outfit',sans-serif;font-weight:300;">Safe Word</span>
-      <input type="text" id="safe-word-input" class="sw-field" value="Dừng Lại" placeholder="safe word">
-    </div>
-
-    <div class="music-pl">
-      <button class="m-ctrl" onclick="toggleMusic()" id="music-play-btn">▶</button>
-      <span class="m-name" id="music-title">Chưa có nhạc</span>
-      <label style="cursor:pointer;color:rgba(159,42,107,.45);font-size:.88rem;" title="Upload nhạc">
-        ♪ <input type="file" accept="audio/*" style="display:none" onchange="loadMusic(this)">
-      </label>
-    </div>
-
-    <p style="font-size:.56rem;color:rgba(255,195,215,.14);letter-spacing:.1em;text-transform:uppercase;margin-top:2px;font-family:'Outfit',sans-serif;font-weight:300;">
-      Chỉ dành cho người trưởng thành · Tôn trọng nhau
-    </p>
-  </div>
-</div>
-
-<!-- ═══════════════ DECK ═══════════════ -->
-<div id="screen-deck" class="screen hidden" style="overflow:hidden;">
-  <div class="flex flex-col items-center gap-0 px-8 w-full" style="z-index:2;max-width:360px;">
-
-    <div class="text-center mb-10">
-      <h2 class="sec-tit">Bộ Bài</h2>
-      <p class="deck-cnt mt-2" id="deck-count-label">Đang tải...</p>
-    </div>
-
-    <div class="deck-stage" id="deck-stage">
-      <div class="s-layer" style="transform:rotate(-7deg) translateY(14px) translateX(-8px);opacity:.4;">
-        <div class="cb-face"><span class="cb-sym">♠</span></div>
-      </div>
-      <div class="s-layer" style="transform:rotate(-3deg) translateY(8px) translateX(-3px);opacity:.65;">
-        <div class="cb-face"><span class="cb-sym">♦</span></div>
-      </div>
-      <div class="s-layer" style="transform:rotate(2deg) translateY(4px);opacity:.82;">
-        <div class="cb-face"><span class="cb-sym">♣</span></div>
-      </div>
-      <div class="s-layer top" id="top-card">
-        <div class="cb-face"><span class="cb-sym">♥</span></div>
-      </div>
-
-      <div class="pull-ind" id="pull-indicator">
-        <div class="pull-arr"></div>
-        <div class="pull-arr"></div>
-        <span class="pull-lbl">Kéo lên để rút bài</span>
-      </div>
-    </div>
-
-    <div class="music-pl mt-14">
-      <button class="m-ctrl" onclick="toggleMusic()" id="music-play-btn2">▶</button>
-      <span class="m-name" id="music-title2">Chưa có nhạc</span>
-      <label style="cursor:pointer;color:rgba(159,42,107,.45);font-size:.88rem;">
-        ♪ <input type="file" accept="audio/*" style="display:none" onchange="loadMusic(this)">
-      </label>
-    </div>
-
-    <button class="btn-ghost mt-6" onclick="goHome()">← Quay Lại</button>
-  </div>
-</div>
-
-<!-- ═══════════════ PLAY ═══════════════ -->
-<div id="screen-play" class="screen hidden">
-  <div class="play-layout">
-
-    <div class="play-hdr">
-      <button class="hdr-back" onclick="goToDeck()">←</button>
-      <span class="round-pill" id="round-counter">Lá 1</span>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button onclick="showHistory()" style="background:none;border:none;color:rgba(159,42,107,.38);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:300;">Lịch sử</button>
-        <div class="safe-pill" id="safe-word-display" onclick="triggerSafeWord()">🛑 DỪNG</div>
-      </div>
-    </div>
-
-    <div class="card-scene" id="card-scene">
-      <div class="card-3d" id="card-flip" onclick="flipCard()">
-
-        <!-- FRONT -->
-        <div class="face-3d card-front-face" id="card-front">
-          <span class="l-tag t-gentle" id="card-level-badge">✦ Nhẹ Nhàng</span>
-          <span class="c-suit" id="card-suit">♥</span>
-          <h2 class="c-title" id="card-title">Nụ Hôn Đầu Buổi Tối</h2>
-          <div class="c-rule"></div>
-          <p class="c-body" id="card-desc">
-            Nhẹ nhàng hôn lên trán hoặc má của người kia, thật chậm và tình cảm. Giữ nguyên trong 5 giây và cảm nhận hơi ấm từ họ.
-          </p>
-          <div class="flip-hint">Chạm để lật · Xem khoảnh khắc ↻</div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <title>Secret Draw</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Outfit:wght@200;300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              void: "#050508",
+              obsidian: "#0A0A0F",
+              ink: "#0F0F18",
+              shadow: "#14131E",
+              velvet: "#1C1A2E",
+            },
+            fontFamily: {
+              display: ['"Playfair Display"', "Georgia", "serif"],
+              body: ['"Outfit"', "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- ═══════════════ HOME ═══════════════ -->
+    <div id="screen-home" class="screen" style="overflow: hidden">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+
+      <div
+        class="flex flex-col items-center gap-5 px-8 text-center"
+        style="z-index: 2; width: 100%; max-width: 360px"
+      >
+        <!-- Seal -->
+        <div
+          style="
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: radial-gradient(
+              circle,
+              rgba(139, 0, 32, 0.3) 0%,
+              rgba(14, 13, 24, 0.8) 70%
+            );
+            border: 1px solid rgba(200, 16, 46, 0.18);
+            box-shadow:
+              0 0 38px rgba(139, 0, 32, 0.28),
+              inset 0 0 28px rgba(139, 0, 32, 0.14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: sym-breathe 4s ease-in-out infinite;
+          "
+        >
+          <span
+            style="
+              font-size: 2.2rem;
+              filter: drop-shadow(0 0 9px rgba(200, 16, 46, 0.6));
+            "
+            >♥</span
+          >
         </div>
 
-        <!-- BACK -->
-        <div class="face-3d card-back-face2" id="card-back-play">
-          <h3 style="font-family:'Playfair Display',serif;font-style:italic;font-size:.95rem;color:rgba(212,160,23,.45);letter-spacing:.1em;font-weight:400;">Khoảnh Khắc Của Bạn</h3>
-          <div class="photo-frame" id="photo-upload-area" onclick="triggerPhotoUpload()">
-            <span style="font-size:1.9rem;color:rgba(200,16,46,.22);">📷</span>
-            <span class="p-lbl">Chạm để thêm ảnh<br><span style="opacity:.6;">của hai bạn</span></span>
+        <div>
+          <h1 class="neon-title">Secret<br />Draw</h1>
+          <p class="neon-sub mt-2">Trò Chơi Tình Yêu</p>
+        </div>
+
+        <div class="line-div"></div>
+
+        <p
+          style="
+            font-family: &quot;Playfair Display&quot;, serif;
+            font-style: italic;
+            color: rgba(255, 195, 215, 0.32);
+            font-size: 0.85rem;
+            line-height: 1.75;
+            max-width: 230px;
+            font-weight: 400;
+          "
+        >
+          Mỗi lá bài — một bí mật dành riêng cho hai người...
+        </p>
+
+        <button class="btn-start" onclick="startGame()">Bắt Đầu Chơi</button>
+
+        <div class="flex gap-3 flex-wrap justify-center">
+          <button class="btn-ghost" onclick="openDeckModal()">
+            ⊞ Chọn Bộ Bài
+          </button>
+          <button class="btn-ghost" onclick="showHistory()">◎ Lịch Sử</button>
+        </div>
+
+        <!-- Active deck indicator -->
+        <p class="active-deck-badge" id="active-deck-badge"></p>
+
+        <!-- Safe word -->
+        <div
+          style="display: flex; align-items: center; gap: 10px; margin-top: 2px"
+        >
+          <span
+            style="
+              font-size: 0.6rem;
+              color: rgba(200, 16, 46, 0.32);
+              letter-spacing: 0.15em;
+              text-transform: uppercase;
+              font-family: &quot;Outfit&quot;, sans-serif;
+              font-weight: 300;
+            "
+            >Safe Word</span
+          >
+          <input
+            type="text"
+            id="safe-word-input"
+            class="sw-field"
+            value="Dừng Lại"
+            placeholder="safe word"
+          />
+        </div>
+
+        <!-- Music player -->
+        <div class="music-pl">
+          <button class="m-ctrl" onclick="toggleMusic()" id="music-play-btn">
+            ▶
+          </button>
+          <span class="m-name" id="music-title">Chưa có nhạc</span>
+          <label
+            style="
+              cursor: pointer;
+              color: rgba(159, 42, 107, 0.45);
+              font-size: 0.88rem;
+            "
+            title="Upload nhạc"
+          >
+            ♪
+            <input
+              type="file"
+              accept="audio/*"
+              style="display: none"
+              onchange="loadMusic(this)"
+            />
+          </label>
+        </div>
+
+        <p
+          style="
+            font-size: 0.56rem;
+            color: rgba(255, 195, 215, 0.14);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-top: 2px;
+            font-family: &quot;Outfit&quot;, sans-serif;
+            font-weight: 300;
+          "
+        >
+          Chỉ dành cho người trưởng thành · Tôn trọng nhau
+        </p>
+      </div>
+    </div>
+
+    <!-- ═══════════════ DECK ═══════════════ -->
+    <div id="screen-deck" class="screen hidden" style="overflow: hidden">
+      <div
+        class="flex flex-col items-center gap-0 px-8 w-full"
+        style="z-index: 2; max-width: 360px"
+      >
+        <div class="text-center mb-10">
+          <h2 class="sec-tit">Bộ Bài</h2>
+          <p class="deck-cnt mt-2" id="deck-count-label">Đang tải...</p>
+        </div>
+
+        <div class="deck-stage" id="deck-stage">
+          <div
+            class="s-layer"
+            style="
+              transform: rotate(-7deg) translateY(14px) translateX(-8px);
+              opacity: 0.4;
+            "
+          >
+            <div class="cb-face"><span class="cb-sym">♠</span></div>
           </div>
-          <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="loadPhoto(this)">
-          <div class="flip-hint">Chạm để lật lại ↻</div>
+          <div
+            class="s-layer"
+            style="
+              transform: rotate(-3deg) translateY(8px) translateX(-3px);
+              opacity: 0.65;
+            "
+          >
+            <div class="cb-face"><span class="cb-sym">♦</span></div>
+          </div>
+          <div
+            class="s-layer"
+            style="transform: rotate(2deg) translateY(4px); opacity: 0.82"
+          >
+            <div class="cb-face"><span class="cb-sym">♣</span></div>
+          </div>
+          <div class="s-layer top" id="top-card">
+            <div class="cb-face"><span class="cb-sym">♥</span></div>
+          </div>
+          <div class="pull-ind" id="pull-indicator">
+            <div class="pull-arr"></div>
+            <div class="pull-arr"></div>
+            <span class="pull-lbl">Kéo lên để rút bài</span>
+          </div>
         </div>
 
+        <div class="music-pl mt-14">
+          <button class="m-ctrl" onclick="toggleMusic()" id="music-play-btn2">
+            ▶
+          </button>
+          <span class="m-name" id="music-title2">Chưa có nhạc</span>
+          <label
+            style="
+              cursor: pointer;
+              color: rgba(159, 42, 107, 0.45);
+              font-size: 0.88rem;
+            "
+          >
+            ♪<input
+              type="file"
+              accept="audio/*"
+              style="display: none"
+              onchange="loadMusic(this)"
+            />
+          </label>
+        </div>
+
+        <button class="btn-ghost mt-6" onclick="goHome()">← Quay Lại</button>
       </div>
     </div>
 
-    <div class="timer-zone">
-      <div class="heat-strip"><div class="heat-fill" id="heat-fill" style="width:8%;"></div></div>
+    <!-- ═══════════════ PLAY ═══════════════ -->
+    <div id="screen-play" class="screen hidden">
+      <div class="play-layout">
+        <div class="play-hdr">
+          <button class="hdr-back" onclick="goToDeck()">←</button>
+          <span class="round-pill" id="round-counter">Lá 1</span>
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button
+              onclick="showHistory()"
+              style="
+                background: none;
+                border: none;
+                color: rgba(159, 42, 107, 0.38);
+                font-size: 0.66rem;
+                letter-spacing: 0.1em;
+                text-transform: uppercase;
+                cursor: pointer;
+                font-family: &quot;Outfit&quot;, sans-serif;
+                font-weight: 300;
+              "
+            >
+              Lịch sử
+            </button>
+            <div
+              class="safe-pill"
+              id="safe-word-display"
+              onclick="triggerSafeWord()"
+            >
+              🛑 DỪNG
+            </div>
+          </div>
+        </div>
 
-      <div class="clock idle" id="timer-display">02:00</div>
+        <div class="card-scene" id="card-scene">
+          <div class="card-3d" id="card-flip">
+            <div class="face-3d card-front-face" id="card-front">
+              <span class="l-tag t-gentle" id="card-level-badge"
+                >✦ Nhẹ Nhàng</span
+              >
+              <span class="c-suit" id="card-suit">♥</span>
+              <h2 class="c-title" id="card-title">Secret Draw</h2>
+              <div class="c-rule"></div>
+              <p class="c-body" id="card-desc">Rút lá đầu tiên để bắt đầu...</p>
+              <div class="swipe-hint">← vuốt sang → để sang bài mới</div>
+            </div>
+          </div>
+        </div>
 
-      <div class="preset-row">
-        <button class="chip" onclick="setTimer(60)">1:00</button>
-        <button class="chip" onclick="setTimer(90)">1:30</button>
-        <button class="chip active" onclick="setTimer(120)">2:00</button>
-        <button class="chip" onclick="setTimer(180)">3:00</button>
-        <button class="chip" onclick="setTimer(240)">4:00</button>
-        <button class="chip" onclick="setTimer(300)">5:00</button>
+        <div class="timer-zone">
+          <div class="heat-strip">
+            <div class="heat-fill" id="heat-fill" style="width: 8%"></div>
+          </div>
+          <div class="clock idle" id="timer-display">02:00</div>
+          <div class="preset-row">
+            <button class="chip" onclick="setTimer(60)">1:00</button>
+            <button class="chip" onclick="setTimer(90)">1:30</button>
+            <button class="chip active" onclick="setTimer(120)">2:00</button>
+            <button class="chip" onclick="setTimer(180)">3:00</button>
+            <button class="chip" onclick="setTimer(240)">4:00</button>
+            <button class="chip" onclick="setTimer(300)">5:00</button>
+          </div>
+          <div class="ctrl-row">
+            <button class="ctrl" onclick="resetTimer()">↺</button>
+            <button
+              class="ctrl-main"
+              id="timer-play-btn"
+              onclick="toggleTimer()"
+            >
+              ▶
+            </button>
+            <button class="ctrl" onclick="flipCard()">↻</button>
+          </div>
+          <button class="btn-next" id="btn-next" onclick="drawNextCard()">
+            ✦ Rút Lá Tiếp Theo ✦
+          </button>
+        </div>
       </div>
+    </div>
 
-      <div class="ctrl-row">
-        <button class="ctrl" onclick="resetTimer()">↺</button>
-        <button class="ctrl-main" id="timer-play-btn" onclick="toggleTimer()">▶</button>
-        <button class="ctrl" onclick="flipCard()">↻</button>
+    <!-- ═══════════════ HISTORY ═══════════════ -->
+    <div id="screen-history" class="screen hidden">
+      <div class="h-hdr">
+        <button
+          onclick="hideHistory()"
+          style="
+            background: none;
+            border: none;
+            color: rgba(159, 42, 107, 0.48);
+            font-size: 1.15rem;
+            cursor: pointer;
+            padding: 4px;
+          "
+        >
+          ←
+        </button>
+        <h2
+          style="
+            font-family: &quot;Playfair Display&quot;, serif;
+            font-style: italic;
+            font-size: 1.15rem;
+            color: rgba(255, 240, 245, 0.65);
+            font-weight: 400;
+            margin: 0;
+            letter-spacing: 0.08em;
+          "
+        >
+          Lịch Sử Buổi Chơi
+        </h2>
+        <button
+          onclick="clearHistory()"
+          style="
+            background: none;
+            border: none;
+            color: rgba(200, 16, 46, 0.38);
+            font-size: 0.68rem;
+            cursor: pointer;
+            font-family: &quot;Outfit&quot;, sans-serif;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 300;
+          "
+        >
+          Xóa
+        </button>
       </div>
-
-      <button class="btn-next" id="btn-next" onclick="drawNextCard()">✦ Rút Lá Tiếp Theo ✦</button>
+      <div
+        class="h-list scroll-area"
+        id="history-list"
+        style="width: 100%; max-width: 480px; flex: 1; min-height: 0"
+      >
+        <p
+          style="
+            text-align: center;
+            color: rgba(255, 215, 225, 0.22);
+            font-size: 0.82rem;
+            margin-top: 46px;
+            font-family: &quot;Playfair Display&quot;, serif;
+            font-style: italic;
+          "
+        >
+          Chưa có lá bài nào được rút...
+        </p>
+      </div>
     </div>
 
-  </div>
-</div>
+    <!-- ═══════════════ DECK SELECTOR MODAL ═══════════════ -->
+    <div class="modal-bg" id="deck-modal" onclick="closeDeckModal(event)">
+      <div class="modal-panel">
+        <div class="m-handle"></div>
+        <h3
+          style="
+            font-family: &quot;Playfair Display&quot;, serif;
+            font-style: italic;
+            font-size: 1.28rem;
+            color: rgba(255, 240, 245, 0.82);
+            margin: 0 0 4px;
+            font-weight: 400;
+            letter-spacing: 0.06em;
+          "
+        >
+          Chọn Bộ Bài
+        </h3>
+        <p
+          style="
+            font-size: 0.7rem;
+            color: rgba(212, 160, 23, 0.38);
+            margin: 0 0 14px;
+            font-family: &quot;Outfit&quot;, sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+          "
+        >
+          Tích chọn bộ bài muốn dùng
+        </p>
 
-<!-- ═══════════════ HISTORY ═══════════════ -->
-<div id="screen-history" class="screen hidden">
-  <div class="h-hdr">
-    <button onclick="hideHistory()" style="background:none;border:none;color:rgba(159,42,107,.48);font-size:1.15rem;cursor:pointer;padding:4px;">←</button>
-    <h2 style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.15rem;color:rgba(255,240,245,.65);font-weight:400;margin:0;letter-spacing:.08em;">Lịch Sử Buổi Chơi</h2>
-    <button onclick="clearHistory()" style="background:none;border:none;color:rgba(200,16,46,.38);font-size:.68rem;cursor:pointer;font-family:'Outfit',sans-serif;letter-spacing:.08em;text-transform:uppercase;font-weight:300;">Xóa</button>
-  </div>
-  <div class="h-list scroll-area" id="history-list" style="width:100%;max-width:480px;flex:1;min-height:0;">
-    <p style="text-align:center;color:rgba(255,215,225,.22);font-size:.82rem;margin-top:46px;font-family:'Playfair Display',serif;font-style:italic;">Chưa có lá bài nào được rút...</p>
-  </div>
-</div>
+        <!-- Deck list -->
+        <div class="deck-modal-body">
+          <div id="deck-list"></div>
+        </div>
 
-<!-- ═══════════════ IMPORT MODAL ═══════════════ -->
-<div class="modal-bg" id="import-modal" onclick="closeImportModal(event)">
-  <div class="modal-panel">
-    <div class="m-handle"></div>
-    <h3 style="font-family:'Playfair Display',serif;font-style:italic;font-size:1.28rem;color:rgba(255,240,245,.82);margin:0 0 4px;font-weight:400;letter-spacing:.06em;">Thêm Bộ Bài</h3>
-    <p style="font-size:.7rem;color:rgba(212,160,23,.38);margin:0 0 16px;font-family:'Outfit',sans-serif;font-weight:300;letter-spacing:.06em;text-transform:uppercase;">Import CSV hoặc nhập thủ công</p>
-
-    <div style="background:rgba(139,0,32,.07);border:1px solid rgba(139,0,32,.18);border-radius:8px;padding:11px;margin-bottom:13px;">
-      <p style="font-size:.62rem;color:rgba(212,160,23,.4);margin:0 0 4px;font-family:'Outfit',sans-serif;letter-spacing:.1em;text-transform:uppercase;">Định dạng file:</p>
-      <code style="font-size:.66rem;color:rgba(255,205,215,.45);font-family:monospace;line-height:1.7;display:block;">Cột A: Tiêu đề · Cột B: Mô tả · Cột C: Mức độ (1-3)</code>
+        <!-- Action buttons -->
+        <div style="display: flex; gap: 9px; margin-top: 4px">
+          <button
+            class="btn-start"
+            onclick="applyDeckSelection()"
+            style="
+              flex: 1;
+              padding: 12px 18px;
+              font-size: 0.9rem;
+              border-radius: 11px;
+              animation: none;
+            "
+          >
+            Áp Dụng
+          </button>
+          <button
+            class="btn-ghost"
+            onclick="openImportModal()"
+            style="padding: 12px 14px; white-space: nowrap"
+          >
+            ＋ Thêm Mới
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div style="margin-bottom:13px;">
-      <label class="f-lbl">Chọn File CSV</label>
-      <input type="file" id="import-file" accept=".csv,.xlsx,.xls" onchange="importCards(this)">
+    <!-- ═══════════════ IMPORT MODAL ═══════════════ -->
+    <div class="modal-bg" id="import-modal" onclick="closeImportModal(event)">
+      <div class="modal-panel">
+        <div class="m-handle"></div>
+        <h3
+          style="
+            font-family: &quot;Playfair Display&quot;, serif;
+            font-style: italic;
+            font-size: 1.28rem;
+            color: rgba(255, 240, 245, 0.82);
+            margin: 0 0 4px;
+            font-weight: 400;
+            letter-spacing: 0.06em;
+          "
+        >
+          Thêm Bộ Bài Mới
+        </h3>
+        <p
+          style="
+            font-size: 0.7rem;
+            color: rgba(212, 160, 23, 0.38);
+            margin: 0 0 14px;
+            font-family: &quot;Outfit&quot;, sans-serif;
+            font-weight: 300;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+          "
+        >
+          Import CSV hoặc nhập thủ công
+        </p>
+
+        <!-- Deck name -->
+        <div style="margin-bottom: 13px">
+          <label class="f-lbl">Tên Bộ Bài</label>
+          <input
+            type="text"
+            id="import-deck-name"
+            class="txt-field"
+            placeholder="Vd: Bộ Ngọt Ngào, Bộ Nóng Bỏng..."
+          />
+        </div>
+
+        <!-- Format hint -->
+        <div
+          style="
+            background: rgba(139, 0, 32, 0.07);
+            border: 1px solid rgba(139, 0, 32, 0.18);
+            border-radius: 8px;
+            padding: 11px;
+            margin-bottom: 13px;
+          "
+        >
+          <p
+            style="
+              font-size: 0.62rem;
+              color: rgba(212, 160, 23, 0.4);
+              margin: 0 0 4px;
+              font-family: &quot;Outfit&quot;, sans-serif;
+              letter-spacing: 0.1em;
+              text-transform: uppercase;
+            "
+          >
+            Định dạng file CSV:
+          </p>
+          <code
+            style="
+              font-size: 0.66rem;
+              color: rgba(255, 205, 215, 0.45);
+              font-family: monospace;
+              line-height: 1.7;
+              display: block;
+            "
+            >id, suit, level, level_name, card_name, title, description,
+            duration_seconds, duration_text</code
+          >
+        </div>
+
+        <!-- CSV upload -->
+        <div style="margin-bottom: 13px">
+          <label class="f-lbl">Chọn File CSV</label>
+          <input
+            type="file"
+            id="import-file"
+            accept=".csv,.xlsx,.xls"
+            onchange="importCards(this)"
+          />
+        </div>
+
+        <!-- Manual entry -->
+        <div style="margin-bottom: 14px">
+          <label class="f-lbl">Nhập nhanh (tiêu đề|mô tả|mức độ)</label>
+          <textarea
+            id="manual-import"
+            rows="3"
+            placeholder="Hôn cổ|Dành 30s hôn nhẹ lên cổ người kia|2&#10;Massage tay|Massage nhẹ đôi tay người kia|1"
+          ></textarea>
+        </div>
+
+        <div style="display: flex; gap: 9px">
+          <button
+            class="btn-start"
+            onclick="importManual()"
+            style="
+              flex: 1;
+              padding: 12px 18px;
+              font-size: 0.9rem;
+              border-radius: 11px;
+              animation: none;
+            "
+          >
+            Thêm Vào Bộ Bài
+          </button>
+          <button
+            class="btn-ghost"
+            onclick="closeImportModal()"
+            style="padding: 12px 16px"
+          >
+            Huỷ
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div style="margin-bottom:14px;">
-      <label class="f-lbl">Nhập nhanh (tiêu đề|mô tả|mức độ)</label>
-      <textarea id="manual-import" rows="3" placeholder="Hôn cổ|Dành 30s hôn nhẹ lên cổ người kia|2&#10;Massage tay|Massage nhẹ đôi tay người kia|1"></textarea>
+    <!-- ═══════════════ SAFE WORD ═══════════════ -->
+    <div
+      id="safe-overlay"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(5, 5, 8, 0.97);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 17px;
+        text-align: center;
+        padding: 40px;
+      "
+    >
+      <div
+        style="
+          font-size: 3.2rem;
+          filter: drop-shadow(0 0 18px rgba(200, 16, 46, 0.6));
+        "
+      >
+        🛑
+      </div>
+      <h2
+        style="
+          font-family: &quot;Playfair Display&quot;, serif;
+          font-style: italic;
+          font-size: 2rem;
+          color: rgba(255, 95, 115, 0.88);
+          font-weight: 400;
+          letter-spacing: 0.04em;
+        "
+      >
+        Dừng Lại
+      </h2>
+      <p
+        style="
+          color: rgba(255, 215, 225, 0.48);
+          font-size: 0.88rem;
+          font-family: &quot;Outfit&quot;, sans-serif;
+          font-weight: 300;
+          line-height: 1.8;
+          max-width: 260px;
+        "
+      >
+        Hãy tôn trọng nhau.<br />Không có trò chơi nào quan trọng hơn cảm xúc và
+        ranh giới của bạn.
+      </p>
+      <p
+        id="safe-word-text"
+        style="
+          font-family: &quot;Playfair Display&quot;, serif;
+          font-style: italic;
+          color: rgba(212, 160, 23, 0.48);
+          font-size: 1.1rem;
+        "
+      ></p>
+      <button
+        class="btn-start"
+        onclick="hideSafeWord()"
+        style="animation: none; margin-top: 5px; padding: 14px 36px"
+      >
+        Tiếp Tục Nếu Muốn
+      </button>
     </div>
 
-    <div style="display:flex;gap:9px;">
-      <button class="btn-start" onclick="importManual()" style="flex:1;padding:12px 18px;font-size:.9rem;border-radius:11px;animation:none;">Thêm Vào Bộ Bài</button>
-      <button class="btn-ghost" onclick="closeImportModal()" style="padding:12px 16px;">Huỷ</button>
-    </div>
-  </div>
-</div>
+    <!-- HEAT FAB -->
+    <button class="heat-fab" id="btn-heat" onclick="increaseHeat()">
+      <span>🔥 Tăng Nhiệt</span>
+      <div class="h-dots">
+        <div class="h-dot on" id="hd-0"></div>
+        <div class="h-dot" id="hd-1"></div>
+        <div class="h-dot" id="hd-2"></div>
+        <div class="h-dot" id="hd-3"></div>
+        <div class="h-dot" id="hd-4"></div>
+      </div>
+    </button>
 
-<!-- ═══════════════ SAFE WORD ═══════════════ -->
-<div id="safe-overlay" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(5,5,8,.97);align-items:center;justify-content:center;flex-direction:column;gap:17px;text-align:center;padding:40px;">
-  <div style="font-size:3.2rem;filter:drop-shadow(0 0 18px rgba(200,16,46,.6));">🛑</div>
-  <h2 style="font-family:'Playfair Display',serif;font-style:italic;font-size:2rem;color:rgba(255,95,115,.88);font-weight:400;letter-spacing:.04em;">Dừng Lại</h2>
-  <p style="color:rgba(255,215,225,.48);font-size:.88rem;font-family:'Outfit',sans-serif;font-weight:300;line-height:1.8;max-width:260px;">
-    Hãy tôn trọng nhau.<br>Không có trò chơi nào quan trọng hơn cảm xúc và ranh giới của bạn.
-  </p>
-  <p id="safe-word-text" style="font-family:'Playfair Display',serif;font-style:italic;color:rgba(212,160,23,.48);font-size:1.1rem;"></p>
-  <button class="btn-start" onclick="hideSafeWord()" style="animation:none;margin-top:5px;padding:14px 36px;">Tiếp Tục Nếu Muốn</button>
-</div>
+    <audio id="bg-music" loop></audio>
 
-<!-- HEAT FAB -->
-<button class="heat-fab" id="btn-heat" onclick="increaseHeat()">
-  <span>🔥 Tăng Nhiệt</span>
-  <div class="h-dots">
-    <div class="h-dot on" id="hd-0"></div>
-    <div class="h-dot" id="hd-1"></div>
-    <div class="h-dot" id="hd-2"></div>
-    <div class="h-dot" id="hd-3"></div>
-    <div class="h-dot" id="hd-4"></div>
-  </div>
-</button>
-
-<audio id="bg-music" loop></audio>
-
-<script>
-const DEFAULT_CARDS=[
-  {title:"Cái Nhìn Thật Lâu",desc:"Nhìn vào mắt người kia thật sâu trong 30 giây, không được cười hay nói chuyện. Chỉ nhìn và cảm nhận.",level:1},
-  {title:"Nụ Hôn Trán",desc:"Hôn lên trán người kia thật nhẹ nhàng, giữ môi ở đó 5 giây. Đặt tay lên má họ khi hôn.",level:1},
-  {title:"Thì Thầm Điều Bí Mật",desc:"Nói thầm vào tai người kia một điều bạn chưa bao giờ nói ra. Không cần phải là gì to lớn – chỉ cần thật.",level:1},
-  {title:"Massage Bàn Tay",desc:"Cầm tay người kia, massage nhẹ từng ngón tay và lòng bàn tay trong 1 phút. Chú ý từng đường chỉ tay của họ.",level:1},
-  {title:"Ôm Chặt 60 Giây",desc:"Ôm người kia thật chặt, đặt đầu vào vai hoặc ngực họ. Không nói gì, chỉ nghe tiếng tim và hơi thở của nhau.",level:1},
-  {title:"Vuốt Tóc",desc:"Dùng tay nhẹ nhàng vuốt tóc người kia từ đỉnh đầu xuống, như đang ru họ ngủ. Làm chậm và tình cảm.",level:1},
-  {title:"Kể Kỷ Niệm Đẹp Nhất",desc:"Kể cho nhau nghe một kỷ niệm đẹp nhất bạn nhớ về người kia. Kể bằng giọng thật nhẹ và tình cảm.",level:1},
-  {title:"Nụ Hôn Má",desc:"Hôn nhẹ lên từng bên má người kia, mỗi bên 3 giây. Giữ tay họ trong khi hôn.",level:1},
-  {title:"Nụ Hôn Chậm",desc:"Hôn môi người kia thật chậm – bắt đầu nhẹ như chạm, rồi từ từ sâu hơn. Không vội vàng, tận hưởng từng khoảnh khắc trong ít nhất 45 giây.",level:2},
-  {title:"Massage Cổ Vai",desc:"Để người kia ngồi trước mặt bạn và massage nhẹ nhàng cổ và vai họ trong 2 phút. Dùng ngón tay cái ấn nhẹ vào các điểm căng.",level:2},
-  {title:"Hơi Thở Trên Da",desc:"Thổi nhẹ hơi thở ấm lên cổ, tai hoặc gáy người kia thật chậm. Quan sát phản ứng của họ.",level:2},
-  {title:"Nhảy Chậm Không Nhạc",desc:"Đứng ôm nhau và nhảy chầm chậm dù không có nhạc. Nhắm mắt và chỉ cảm nhận cơ thể của nhau.",level:2},
-  {title:"Hôn Lên Cổ",desc:"Hôn nhẹ nhàng lên cổ người kia – từ dưới tai xuống đến vai. Mỗi nụ hôn cách nhau một nhịp thở.",level:2},
-  {title:"Chạm Tay Khắp Mặt",desc:"Nhắm mắt lại và để người kia dùng đầu ngón tay khẽ chạm lên từng phần khuôn mặt bạn: trán, gò má, mũi, môi... như đang vẽ lại ký ức.",level:2},
-  {title:"Lời Thì Thầm Ngọt Ngào",desc:"Nói thầm vào tai người kia những gì bạn yêu thích nhất về cơ thể và tâm hồn họ, thật chi tiết và cụ thể.",level:2},
-  {title:"Trán Chạm Trán",desc:"Đứng thật gần, để trán chạm trán nhau. Nhắm mắt lại, hít thở cùng nhịp. Giữ nguyên trong 1 phút không nói một lời.",level:2},
-  {title:"Cởi Nút Áo Nhau",desc:"Chậm rãi, tình tứ cởi từng chiếc nút áo của người kia bằng chỉ hai ngón tay. Nhìn vào mắt họ trong khi làm.",level:3},
-  {title:"Hôn Sâu Không Giới Hạn",desc:"Dành trọn thời gian hẹn hò chỉ để hôn nhau – khám phá mọi cách hôn khác nhau mà hai người chưa thử.",level:3},
-  {title:"Massage Toàn Lưng",desc:"Để người kia nằm sấp, bắt đầu massage từ gáy xuống toàn bộ phần lưng. Dùng cả hai tay, thay đổi áp lực và tốc độ tùy theo cảm nhận.",level:3},
-  {title:"Khiêu Vũ Gợi Cảm",desc:"Bật một bản nhạc chậm, sexy và khiêu vũ cho người kia xem trong 1 phút. Tự nhiên, tự tin – không cần hoàn hảo.",level:3},
-  {title:"Thì Thầm Điều Muốn",desc:"Nói thật nhỏ vào tai người kia một điều bạn muốn họ làm cho mình tối nay. Chi tiết nhất có thể.",level:3},
-  {title:"Hôn Từ Vai Xuống",desc:"Bắt đầu từ điểm nối vai và cổ, hôn nhẹ xuống theo đường vai người kia. Mỗi nụ hôn dừng lại một nhịp tim.",level:3},
-];
-
-let S={cards:[],usedIdx:[],current:null,round:0,heat:0,timerSec:120,timerPreset:120,timerOn:false,timerInterval:null,history:[],safeWord:'Dừng Lại',musicOn:false};
-
-function init(){
-  const sc=localStorage.getItem('sd_cards');S.cards=sc?JSON.parse(sc):[...DEFAULT_CARDS];
-  const sh=localStorage.getItem('sd_history');S.history=sh?JSON.parse(sh):[];
-  const sw=localStorage.getItem('sd_sw');if(sw){document.getElementById('safe-word-input').value=sw;S.safeWord=sw;}
-  initCanvas();updateDeckLabel();
-  document.getElementById('safe-word-input').addEventListener('input',function(){S.safeWord=this.value;localStorage.setItem('sd_sw',this.value);document.getElementById('safe-word-display').innerHTML='🛑 '+(this.value||'DỪNG');});
-  setupDeckDrag();
-}
-
-function initCanvas(){
-  const cv=document.getElementById('bg-canvas'),ctx=cv.getContext('2d');let W,H;
-  const pts=[];
-  function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight;}resize();window.addEventListener('resize',resize);
-  const palettes=['rgba(200,16,46,','rgba(212,160,23,','rgba(159,42,107,','rgba(255,120,140,'];
-  for(let i=0;i<55;i++)pts.push({x:Math.random(),y:Math.random(),r:Math.random()*.9+.2,phase:Math.random()*Math.PI*2,spd:Math.random()*.004+.001,col:palettes[Math.floor(Math.random()*palettes.length)]});
-  function frame(){
-    ctx.clearRect(0,0,W,H);const t=Date.now()*.001;
-    pts.forEach(p=>{const a=.12+.3*Math.abs(Math.sin(t*p.spd*8+p.phase));ctx.beginPath();ctx.arc(p.x*W,p.y*H,p.r,0,Math.PI*2);ctx.fillStyle=p.col+a+')';ctx.fill();});
-    requestAnimationFrame(frame);
-  }frame();
-}
-
-function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));document.getElementById(id).classList.remove('hidden');}
-function goHome(){stopTimer();showScreen('screen-home');document.getElementById('btn-heat').classList.remove('visible');}
-function goToDeck(){stopTimer();showScreen('screen-deck');document.getElementById('btn-heat').classList.remove('visible');updateDeckLabel();}
-
-function startGame(){
-  S.safeWord=document.getElementById('safe-word-input').value||'Dừng Lại';
-  document.getElementById('safe-word-display').innerHTML='🛑 '+S.safeWord;
-  S.usedIdx=[];S.round=0;S.heat=0;S.history=[];
-  showScreen('screen-deck');updateDeckLabel();
-  const layers=document.querySelectorAll('.s-layer');
-  layers.forEach((l,i)=>{l.style.opacity='0';l.style.transform='translateY(28px)';setTimeout(()=>{l.style.transition='all .5s cubic-bezier(.4,0,.2,1)';const trs=['rotate(-7deg) translateY(14px) translateX(-8px)','rotate(-3deg) translateY(8px) translateX(-3px)','rotate(2deg) translateY(4px)','rotate(0deg)'];const ops=[.4,.65,.82,1];l.style.opacity=ops[i];l.style.transform=trs[i];},i*100+80);});
-}
-
-function updateDeckLabel(){const l=S.cards.length-S.usedIdx.length;document.getElementById('deck-count-label').textContent=`${l} lá còn lại · ${S.cards.length} tổng`;}
-
-function setupDeckDrag(){
-  const stage=document.getElementById('deck-stage');let sy=0,cy=0,drag=false;const top=document.getElementById('top-card');
-  stage.addEventListener('touchstart',e=>{sy=e.touches[0].clientY;drag=true;top.style.transition='none';},{passive:true});
-  stage.addEventListener('touchmove',e=>{if(!drag)return;cy=e.touches[0].clientY;const dy=sy-cy;if(dy>0){const p=Math.min(dy/120,1);top.style.transform=`translateY(${-dy*.7}px) rotate(${p*6}deg) scale(${1+p*.02})`;top.style.opacity=String(1-p*.25);}},{passive:true});
-  stage.addEventListener('touchend',()=>{if(!drag)return;drag=false;const dy=sy-cy;if(dy>65){animateDraw(top);}else{top.style.transition='all .4s cubic-bezier(.4,0,.2,1)';top.style.transform='rotate(0deg)';top.style.opacity='1';}},{passive:true});
-  stage.addEventListener('click',()=>animateDraw(top));
-}
-
-function animateDraw(el){
-  const r=el.getBoundingClientRect(),W=innerWidth,H=innerHeight;
-  const fly=document.createElement('div');fly.className='fly-card';
-  fly.style.cssText=`left:${r.left}px;top:${r.top}px;width:${r.width}px;height:${r.height}px;`;
-  fly.innerHTML=el.innerHTML;document.body.appendChild(fly);el.style.opacity='0';
-  spawnSparkles(r.left+r.width/2,r.top+r.height/2);
-  requestAnimationFrame(()=>{
-    fly.style.transition='all .55s cubic-bezier(.34,1.1,.64,1)';
-    fly.style.left=(W/2-r.width/2)+'px';fly.style.top=(H/2-r.height/2)+'px';
-    fly.style.transform='scale(1.04) rotate(4deg)';fly.style.boxShadow='0 40px 100px rgba(0,0,0,.95),0 0 80px rgba(200,16,46,.2)';
-    setTimeout(()=>{fly.style.opacity='0';fly.style.transform='scale(.93) translateY(-14px) rotate(-3deg)';
-    setTimeout(()=>{fly.remove();el.style.opacity='1';el.style.transition='';el.style.transform='';drawCard();},270);},440);
-  });
-}
-
-function spawnSparkles(cx,cy){
-  const colors=['#F0C040','#D4A017','#C8102E','#E91E8C','#fff','#FF6B7A'];
-  for(let i=0;i<10;i++){const s=document.createElement('div');s.className='sparkle';const a=(i/10)*Math.PI*2,d=22+Math.random()*42;s.style.cssText=`left:${cx}px;top:${cy}px;background:${colors[Math.floor(Math.random()*colors.length)]};`;document.body.appendChild(s);const tx=cx+Math.cos(a)*d,ty=cy+Math.sin(a)*d;requestAnimationFrame(()=>{s.style.transition='all .55s ease-out';s.style.left=tx+'px';s.style.top=ty+'px';s.style.opacity='0';s.style.transform='scale(2.5)';setTimeout(()=>s.remove(),550);});}
-}
-
-function pickCard(){
-  if(S.usedIdx.length>=S.cards.length)S.usedIdx=[];
-  const r=S.round,f=S.heat;let ml;
-  if(f>0)ml=Math.min(3,f+1);else if(r<3)ml=1;else if(r<6)ml=Math.random()<.65?1:2;else if(r<10)ml=Math.random()<.4?3:(Math.random()<.5?2:1);else ml=3;
-  const av=S.cards.map((c,i)=>({...c,i})).filter(c=>!S.usedIdx.includes(c.i)&&c.level<=ml);
-  const pool=av.length?av:S.cards.map((c,i)=>({...c,i})).filter(c=>!S.usedIdx.includes(c.i));
-  const same=pool.filter(c=>c.level===ml);const chosen=same.length&&Math.random()<.6?same[Math.floor(Math.random()*same.length)]:pool[Math.floor(Math.random()*pool.length)];
-  S.usedIdx.push(chosen.i);return chosen;
-}
-
-function drawCard(){
-  const card=pickCard();S.current=card;S.round++;
-  document.getElementById('card-title').textContent=card.title;
-  document.getElementById('card-desc').textContent=card.desc;
-  document.getElementById('round-counter').textContent=`Lá ${S.round}`;
-  const suits=['♥','♦','♠','♣'];document.getElementById('card-suit').textContent=suits[Math.floor(Math.random()*4)];
-  const badge=document.getElementById('card-level-badge');
-  if(card.level===1){badge.textContent='✦ Nhẹ Nhàng';badge.className='l-tag t-gentle';}
-  else if(card.level===2){badge.textContent='♥ Tình Cảm';badge.className='l-tag t-warm';}
-  else{badge.textContent='🔥 Nóng Bỏng';badge.className='l-tag t-hot';}
-  const hp=Math.min(96,(S.round/12)*100+S.heat*17);document.getElementById('heat-fill').style.width=hp+'%';
-  for(let i=0;i<5;i++)document.getElementById('hd-'+i).classList.toggle('on',i<=S.heat);
-  const flip=document.getElementById('card-flip');flip.classList.remove('flipped');flip.style.transition='none';setTimeout(()=>{flip.style.transition='';},50);
-  const area=document.getElementById('photo-upload-area');const img=area.querySelector('img');if(img)img.remove();area.querySelectorAll('span').forEach(s=>s.style.display='');
-  document.getElementById('btn-next').classList.remove('visible');resetTimer();
-  S.history.push({title:card.title,desc:card.desc,level:card.level,round:S.round});localStorage.setItem('sd_history',JSON.stringify(S.history));
-  showScreen('screen-play');document.getElementById('btn-heat').classList.add('visible');updateDeckLabel();
-  const fc=document.getElementById('card-flip');fc.style.opacity='0';fc.style.transform='translateY(-22px) rotateY(-8deg)';
-  requestAnimationFrame(()=>{fc.style.transition='all .62s cubic-bezier(.34,1.1,.64,1)';fc.style.opacity='1';fc.style.transform='';});
-}
-
-function drawNextCard(){
-  const fc=document.getElementById('card-flip');fc.style.transition='all .35s ease';fc.style.opacity='0';fc.style.transform='translateX(-48px) rotate(-4deg)';
-  setTimeout(()=>{showScreen('screen-deck');document.getElementById('btn-heat').classList.remove('visible');updateDeckLabel();fc.style.transition='none';fc.style.opacity='1';fc.style.transform='';},360);
-}
-
-function flipCard(){document.getElementById('card-flip').classList.toggle('flipped');}
-
-function setTimer(s){stopTimer();S.timerPreset=s;S.timerSec=s;updateTimerDisplay();document.querySelectorAll('.chip').forEach(b=>{b.classList.remove('active');if(b.getAttribute('onclick')===`setTimer(${s})`)b.classList.add('active');});document.getElementById('btn-next').classList.remove('visible');document.getElementById('timer-play-btn').textContent='▶';}
-function toggleTimer(){S.timerOn?pauseTimer():startTimer();}
-function startTimer(){if(S.timerSec<=0)resetTimer();S.timerOn=true;document.getElementById('timer-play-btn').textContent='⏸';document.getElementById('timer-display').className='clock running';S.timerInterval=setInterval(()=>{S.timerSec--;updateTimerDisplay();if(S.timerSec<=10&&S.timerSec>0)document.getElementById('timer-display').className='clock warning';if(S.timerSec<=0)timerDone();},1000);}
-function pauseTimer(){S.timerOn=false;clearInterval(S.timerInterval);document.getElementById('timer-play-btn').textContent='▶';document.getElementById('timer-display').className='clock idle';}
-function stopTimer(){S.timerOn=false;clearInterval(S.timerInterval);}
-function resetTimer(){stopTimer();S.timerSec=S.timerPreset;updateTimerDisplay();document.getElementById('timer-play-btn').textContent='▶';document.getElementById('timer-display').className='clock idle';document.getElementById('btn-next').classList.remove('visible');}
-function timerDone(){stopTimer();document.getElementById('timer-display').className='clock idle';document.getElementById('timer-display').textContent='00:00';document.getElementById('timer-play-btn').textContent='▶';if(navigator.vibrate)navigator.vibrate([180,80,180]);document.getElementById('btn-next').classList.add('visible');const d=document.getElementById('timer-display');d.style.color='rgba(233,30,140,.82)';d.style.textShadow='0 0 28px rgba(233,30,140,.5)';setTimeout(()=>{d.style.color='';d.style.textShadow='';d.className='clock idle';},2100);}
-function updateTimerDisplay(){const m=Math.floor(S.timerSec/60),s=S.timerSec%60;document.getElementById('timer-display').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');}
-
-function increaseHeat(){if(S.heat<4){S.heat++;for(let i=0;i<5;i++)document.getElementById('hd-'+i).classList.toggle('on',i<=S.heat);const f=document.getElementById('heat-fill');f.style.width=Math.min(96,parseInt(f.style.width)+13)+'%';showToast('🔥 Nhiệt độ tăng lên!');}else showToast('🔥 Đã đạt mức tối đa!');}
-
-function showToast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);requestAnimationFrame(()=>{t.style.opacity='1';setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},1750);});}
-
-function triggerSafeWord(){document.getElementById('safe-word-text').textContent='"'+S.safeWord+'"';document.getElementById('safe-overlay').style.display='flex';stopTimer();if(navigator.vibrate)navigator.vibrate([300,150,300]);}
-function hideSafeWord(){document.getElementById('safe-overlay').style.display='none';}
-
-function showHistory(){renderHistory();document.getElementById('screen-history').classList.remove('hidden');}
-function hideHistory(){document.getElementById('screen-history').classList.add('hidden');}
-function clearHistory(){S.history=[];localStorage.removeItem('sd_history');renderHistory();}
-function renderHistory(){
-  const list=document.getElementById('history-list');
-  if(!S.history.length){list.innerHTML='<p style="text-align:center;color:rgba(255,215,225,.22);font-size:.82rem;margin-top:46px;font-family:\'Playfair Display\',serif;font-style:italic;">Chưa có lá bài nào được rút...</p>';return;}
-  const lc=['rgba(212,160,23,.42)','rgba(159,42,107,.52)','rgba(200,16,46,.68)'];
-  list.innerHTML=S.history.map((h,i)=>`<div class="h-item"><span class="h-num">${i+1}</span><div class="h-info"><h4>${h.title}</h4><p>${h.desc.substring(0,56)}${h.desc.length>56?'...':''}</p></div><span class="h-lv" style="color:${lc[h.level-1]};">${'●'.repeat(h.level)}</span></div>`).join('');
-}
-
-function openImportModal(){document.getElementById('import-modal').classList.add('open');}
-function closeImportModal(e){if(!e||e.target===document.getElementById('import-modal'))document.getElementById('import-modal').classList.remove('open');}
-function importManual(){const raw=document.getElementById('manual-import').value.trim();if(!raw)return;let added=0;raw.split('\n').filter(l=>l.trim()).forEach(line=>{const p=line.split('|');if(p.length>=2){S.cards.push({title:p[0].trim(),desc:p[1].trim(),level:parseInt(p[2])||1});added++;}});if(added){localStorage.setItem('sd_cards',JSON.stringify(S.cards));updateDeckLabel();showToast(`✓ Đã thêm ${added} lá bài!`);document.getElementById('manual-import').value='';document.getElementById('import-modal').classList.remove('open');}}
-function importCards(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{const lines=e.target.result.split('\n').filter(l=>l.trim());let added=0;lines.forEach((line,idx)=>{if(idx===0&&line.toLowerCase().includes('title'))return;const p=line.split(',');if(p.length>=2){S.cards.push({title:p[0].replace(/"/g,'').trim(),desc:p[1].replace(/"/g,'').trim(),level:parseInt(p[2])||1});added++;}});if(added){localStorage.setItem('sd_cards',JSON.stringify(S.cards));updateDeckLabel();showToast(`✓ Đã import ${added} lá!`);document.getElementById('import-modal').classList.remove('open');}};reader.readAsText(file,'UTF-8');}
-
-function triggerPhotoUpload(){document.getElementById('photo-input').click();}
-function loadPhoto(input){const file=input.files[0];if(!file)return;const area=document.getElementById('photo-upload-area');const old=area.querySelector('img');if(old)old.remove();const img=document.createElement('img');img.src=URL.createObjectURL(file);img.style.cssText='border-radius:15px;object-fit:cover;';area.appendChild(img);area.querySelectorAll('span').forEach(s=>s.style.display='none');}
-
-function loadMusic(input){const file=input.files[0];if(!file)return;const audio=document.getElementById('bg-music');audio.src=URL.createObjectURL(file);const name=file.name.replace(/\.[^.]+$/,'');['music-title','music-title2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=name;});audio.play();S.musicOn=true;['music-play-btn','music-play-btn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='⏸';});}
-function toggleMusic(){const audio=document.getElementById('bg-music');if(!audio.src)return;if(S.musicOn){audio.pause();S.musicOn=false;['music-play-btn','music-play-btn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='▶';});}else{audio.play();S.musicOn=true;['music-play-btn','music-play-btn2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='⏸';});}}
-
-document.addEventListener('touchmove',e=>{if(!e.target.closest('.scroll-area')&&!e.target.closest('.c-body'))e.preventDefault();},{passive:false});
-let _lt=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-_lt<270)e.preventDefault();_lt=n;},{passive:false});
-document.addEventListener('DOMContentLoaded',init);
-</script>
-</body>
+    <script src="app.js"></script>
+  </body>
 </html>
